@@ -1,0 +1,53 @@
+package com.nike.fleam
+package ops
+
+import akka.stream.Materializer
+import akka.stream.scaladsl._
+import scala.concurrent.Future
+import scala.collection.immutable.Iterable
+import scala.language.implicitConversions
+
+/** Copyright 2020-present, Nike, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the MIT license found in
+ * the LICENSE file in the root directory of this source tree.
+ **/
+
+trait FutureFunctionHelperOps2to22 {
+[2..22#
+  implicit def futureFunction1HelperOps[[#T1#], U](f: Function1[[#T1#], Future[U]]): FutureFunction1Helper[[#T1#], U] =
+    new FutureFunction1Helper(f)
+#
+]
+}
+
+[2..22#
+class FutureFunction1Helper[[#-T1#], +U](val f: Function1[[#T1#], Future[U]]) {
+  /** lifts a function from ([#T1#]) => Future[U] into an ordered Flow */
+  def toFlow(parallelism: Int): Flow[([#T1#]), U, akka.NotUsed] =
+    Flow[([#T1#])]
+      .mapAsync(parallelism)(f.tupled)
+
+  /** lifts a function from ([#T1#]) => Future[U] into an unordered Flow */
+  def toFlowUnordered(parallelism: Int): Flow[([#T1#]), U, akka.NotUsed] =
+    Flow[([#T1#])]
+      .mapAsyncUnordered(parallelism)(f.tupled)
+
+  def toSource(parallelism: Int)(in: Iterable[([#T1#])]): Source[U, akka.NotUsed] =
+    Source(in)
+      .mapAsync(parallelism)(f.tupled)
+
+  def toSourceUnordered(parallelism: Int)(in: Iterable[([#T1#])]): Source[U, akka.NotUsed] =
+    Source(in)
+      .mapAsyncUnordered(parallelism)(f.tupled)
+
+  /** Shorthand for running a source through an async function with parallelism */
+  def toStream(parallelism: Int)(in: Iterable[([#T1#])])(implicit mat: Materializer): Future[Seq[U]] =
+    toSource(parallelism)(in).runWith(Sink.seq)
+
+  /** Shorthand for running a source through an async function with parallelism unordered */
+  def toStreamUnordered(parallelism: Int)(in: Iterable[([#T1#])])(implicit mat: Materializer): Future[Seq[U]] =
+    toSourceUnordered(parallelism)(in).runWith(Sink.seq)
+}#
+]

@@ -1,0 +1,33 @@
+package com.nike.fleam
+
+import scala.concurrent.{Future, ExecutionContext}
+
+/** Copyright 2020-present, Nike, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the MIT license found in
+ * the LICENSE file in the root directory of this source tree.
+ **/
+
+trait ValveLiftedFailedValuesPoly {
+  class LiftedFailedValues[U](policy: PartialFunction[U, Exception]) {
+    def apply[T](f: T => Future[U])(implicit ec: ExecutionContext): T => Future[U] =
+      t => f(t).map { u => (policy andThen { case ex => throw ex}).applyOrElse[U, U](u, identity) }
+
+[2..22#
+    def apply[[#T1#]](f: ([#T1#]) => Future[U])(implicit ec: ExecutionContext): ([#T1#]) => Future[U] = {
+      case t => f.tupled(t).map { u => (policy andThen { case ex => throw ex}).applyOrElse[U, U](u, identity) }
+    }#
+]
+  }
+}
+
+trait ValvePoly {
+  def applyOne[T, U](f: T => Future[U]): T => Future[U]
+
+[2..22#
+  def apply[[#T1#], U](f: ([#T1#]) => Future[U]): ([#T1#]) => Future[U] = {
+    case e => applyOne(f.tupled)(e)
+  }#
+]
+}

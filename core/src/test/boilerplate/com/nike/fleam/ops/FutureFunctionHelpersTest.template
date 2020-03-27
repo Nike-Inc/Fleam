@@ -1,0 +1,118 @@
+package com.nike.fleam
+package ops
+
+
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.concurrent.ScalaFutures
+import scala.concurrent.Future
+import akka.stream.scaladsl._
+import scala.concurrent.duration._
+import com.nike.fleam.implicits._
+
+class FutureFunctionHelpersTest extends AnyFlatSpec with Matchers with ScalaFutures {
+
+  behavior of "FutureFunctionHelpers"
+  import TestTools._
+
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(timeout = 20.seconds, interval = 10.millis)
+
+  val parallelism = 1
+[#
+  it should "lift a function1 to a flow" in {
+[#    type Int1 = Int#
+]
+
+    def f([#i1: Int1#]) = Future([#i1# + ])
+
+    val flow: Flow[([#Int1#]), Int, _] = (f _).toFlow(parallelism)
+
+    val source = Source.single(([#1#]))
+
+    val graph = source.via(flow).runWith(Sink.head)
+
+    whenReady(graph) { _ should be ([#1# + ]) }
+  }#
+]
+
+[#
+  it should "lift a function1 to an unordered flow" in {
+[#    type Int1 = Int#
+]
+
+    def f([#i1: Int1#]) = Future([#i1# + ])
+
+    val flow: Flow[([#Int1#]), Int, _] = (f _).toFlowUnordered(parallelism)
+
+    val source = Source.single(([#1#]))
+
+    val graph = source.via(flow).runWith(Sink.head)
+
+    whenReady(graph) { _ should be ([#1# + ]) }
+  }#
+]
+
+[#
+  it should "lift a function1 to a Source" in {
+[#    type Int1 = Int#
+]
+
+    val inputs = List(([#1#]))
+
+    def f([#i1: Int1#]) = Future([#i1# + ])
+
+    val source: Source[Int, akka.NotUsed] = (f _).toSource(parallelism)(inputs)
+
+    val graph = source.runWith(Sink.head)
+
+    whenReady(graph) { _ should be ([#1# + ]) }
+  }#
+]
+
+[#
+  it should "lift a function1 to an unordered Source" in {
+[#    type Int1 = Int#
+]
+
+    val inputs = List(([#1#]))
+
+    def f([#i1: Int1#]) = Future([#i1# + ])
+
+    val source: Source[Int, akka.NotUsed] = (f _).toSourceUnordered(parallelism)(inputs)
+
+    val graph = source.runWith(Sink.head)
+
+    whenReady(graph) { _ should be ([#1# + ]) }
+  }#
+]
+
+[#
+  it should "lift a function1 to a Stream" in {
+[#    type Int1 = Int#
+]
+
+    val inputs = List(([#1#]))
+
+    def f([#i1: Int1#]) = Future([#i1# + ])
+
+    val result = (f _).toStream(parallelism)(inputs)
+
+    whenReady(result) { _ should contain theSameElementsAs List([#1# + ]) }
+  }#
+]
+
+[#
+  it should "lift a function1 to an unordered Stream" in {
+[#    type Int1 = Int#
+]
+
+    val inputs = List(([#1#]))
+
+    def f([#i1: Int1#]) = Future([#i1# + ])
+
+    val result = (f _).toStreamUnordered(parallelism)(inputs)
+
+    whenReady(result) { _ should contain theSameElementsAs List([#1# + ]) }
+  }#
+]
+}
