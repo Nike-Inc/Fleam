@@ -44,21 +44,31 @@ val sharedScalacOptions = Seq(
   "-unchecked")
 
 val releaseSettings = Seq(
-  resolvers += "nike" at "https://artifactory.nike.com/artifactory/all-repos",
   organization := "com.nike.fleam",
+  organizationName := "Nike",
+  organizationHomepage := Some(url("http://engineering.nike.com")),
   releaseCrossBuild := true,
+  bintrayOrganization := Some("nike"),
+  bintrayPackageLabels := Seq("akka streams"),
+  bintrayReleaseOnPublish in ThisBuild := false,
   scalacOptions ++= sharedScalacOptions ++ Seq("-Xfatal-warnings", "-Xlint", "-Xlint:-adapted-args"),
   scalacOptions in (Compile,console) ++= sharedScalacOptions,
   scalacOptions in (Compile,doc) ++= sharedScalacOptions,
-  publishTo := {
-    val repo = "https://artifactory.nike.com/artifactory/maven"
-    if (isSnapshot.value)
-      Some("snapshots" at s"$repo-snapshots")
-    else
-      Some("releases" at repo)
-  },
   licenses += ("MIT", url("http://opensource.org/licenses/MIT")),
-  credentials += Credentials(Path.userHome / ".ivy2" / ".credentials"))
+  homepage := Some(url("https://github.com/Nike-Inc/Fleam")),
+  startYear := Some(2020),
+  scmInfo := Some(ScmInfo(
+    url("https://github.com/Nike-Inc/Fleam"),
+    "scm:git@github.com:Nike-Inc/Fleam.git"
+  )),
+  developers := List(
+    Developer(
+      id = "vendamere",
+      name = "Peter Vendamere",
+      email = "vendamere@gmail.com",
+      url = url("https://github.com/vendamere")
+    )
+  ))
 
 val coverageSettings = Seq(
   coverageMinimum := 60,
@@ -98,6 +108,7 @@ lazy val sqs = (project in file("./aws/sqs"))
     resolvers += Resolver.bintrayRepo("nike", "maven"),
     name := "fleam-aws-sqs",
     description := "Fleam SQS is a library of classes to aid in processing AWS SQS messages in a functional manner",
+    bintrayPackageLabels ++= Seq("sqs", "aws"),
     libraryDependencies += "com.amazonaws" % "aws-java-sdk-sqs" % awsVersion exclude("commons-logging", "commons-logging"),
     libraryDependencies += "com.nike.fawcett" %% s"fawcett-sqs-v1" % "0.3.0")
 
@@ -111,6 +122,7 @@ lazy val cloudwatch = (project in file("./aws/cloudwatch"))
   .settings(
     name := "fleam-aws-cloudwatch",
     description := "Provides a class to create a flow which logs a count to Cloudwatch as part of the stream",
+    bintrayPackageLabels ++= Seq("cloudwatch", "aws"),
     libraryDependencies += "com.amazonaws" % "aws-java-sdk-cloudwatch" % awsVersion exclude("commons-logging", "commons-logging"))
 
 lazy val docs = (project in file("./mdoc"))
