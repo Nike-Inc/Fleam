@@ -9,6 +9,17 @@ Streams](https://doc.akka.io/docs/akka/2.5/stream/).
 In the disjunctive case this means that as data flows through the stream if it becomes a `Left` it will no longer be
 processed by the disjunctive stages and will pass through continuing further down stream.
 
+## Getting Started
+Add a dependency in your `build.sbt`.
+```
+val fleamVersion = "5.0.0"
+...
+libraryDependencies ++= Seq(
+  "com.nike.fleam" %% "fleam" % fleamVersion,
+  "com.nike.fleam" %% "fleam-aws-sqs" % fleamVersion,
+  "com.nike.fleam" %% "fleam-aws-cloudwatch" % fleamVersion)
+```
+
 ## Either Stream enhancements
 * `eitherMap` - Applies a function to items that are Right where only the right-hand value is passed and the result is
   placed back into the Either `R => R1`
