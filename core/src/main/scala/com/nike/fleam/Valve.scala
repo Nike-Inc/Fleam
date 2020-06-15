@@ -66,7 +66,7 @@ class Valve(
   logger: String => Unit = _ => ())
     (implicit actorSystem: ActorSystem) extends ValvePoly {
 
-  def applyOne[T, U](f: T => Future[U]) = { t: T =>
+  protected def applyOne[T, U](f: T => Future[U], recoverWith: PartialFunction[Throwable, Future[U]]) = { t: T =>
     import actorSystem.dispatcher
     val scheduler = actorSystem.scheduler
     def tryCall(n: Int): Future[U] = {
@@ -74,7 +74,8 @@ class Valve(
         f(t)
       }.recoverWith { case thrown =>
         if (n <= 0) {
-          Future.failed(thrown)
+          val default: Throwable => Future[U] = ex => Future.failed(ex)
+          recoverWith.applyOrElse(thrown, default)
         } else {
           val waitTime = delay(maxRetries, (maxRetries + 1) - n)
           logger(s"Retry #${(maxRetries + 1) - n} of $maxRetries delaying milliseconds=${waitTime.toMillis}")
@@ -85,9 +86,10 @@ class Valve(
     tryCall(maxRetries)
   }
 
-  def apply[T, U] = applyOne(_: T => Future[U])
+  def apply[T, U] = applyOne(_: T => Future[U], PartialFunction.empty)
+  def apply[T, U](recoverWith: PartialFunction[Throwable, Future[U]]) = applyOne(_: T => Future[U], recoverWith)
 
   def apply[T, U](f: T => Future[U]): T => Future[U] = { t: T =>
-    applyOne(f)(t)
+    applyOne(f, PartialFunction.empty)(t)
   }
 }
