@@ -55,3 +55,25 @@ val fetch1 = valve { number: Int =>
 }
 ```
 
+One thing to keep in mind is that with Akka Streams if you're dropping values that throw exceptions you're going to
+lose elements if they continue to fail. If you're using values like eithers to represent your errors you'll want to
+recover from those exceptions after they've triggered the circuit breaker and exceeded the max retries. You can do
+this by providing a partial function from Throwable to your result type.
+
+```scala
+case class CustomException(value: String) extends Throwable
+
+case class Error(value: String)
+
+val recoverWith: PartialFunction[Throwable, Future[Either[Error, String]]] = {
+  case CustomException(value) => Future.successful(Left(Error(value)))
+}
+
+val failingFetch: Int => Future[Either[Error, String]] = { number =>
+  // Real work here...
+  Future.failed(new CustomException(number.toString))
+}
+
+val valvedFetchWithRecovery : Int => Future[Either[Error, String]] = valve(recoverWith)(failingFetch)
+```
+

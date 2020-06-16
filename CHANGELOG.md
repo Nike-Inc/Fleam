@@ -1,6 +1,11 @@
 Fleam release notes
 -------------------
 
+## Fleam 6.0.0
+* Adds the ability to recover exceptions while using a Valve to avoid having elements dropped by akka streams
+  See the docs for an example usage
+* Makes the `applyOne` function on Valve protected, The apply methods should be used instead of applyOne directly.
+
 ## Fleam 5.0.0
 * Adds support for scala 2.13 and removes 2.11
 * Removes dependency on Iota. `sqs.OpError` type is change to a simple `Either`. If you're using the provided logging

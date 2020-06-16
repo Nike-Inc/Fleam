@@ -23,11 +23,15 @@ trait ValveLiftedFailedValuesPoly {
 }
 
 trait ValvePoly {
-  def applyOne[T, U](f: T => Future[U]): T => Future[U]
+  protected def applyOne[T, U](f: T => Future[U], recoverWith: PartialFunction[Throwable, Future[U]]): T => Future[U]
 
 [2..22#
   def apply[[#T1#], U](f: ([#T1#]) => Future[U]): ([#T1#]) => Future[U] = {
-    case e => applyOne(f.tupled)(e)
+    case e => applyOne(f.tupled, PartialFunction.empty)(e)
+  }
+
+  def apply[[#T1#], U](recoverWith: PartialFunction[Throwable, Future[U]])(f: ([#T1#]) => Future[U]): ([#T1#]) => Future[U] = {
+    case e => applyOne(f.tupled, recoverWith)(e)
   }#
 ]
 }

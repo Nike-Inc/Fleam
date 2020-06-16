@@ -6,6 +6,7 @@ import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 
 import scala.concurrent.duration._
 import cats.~>
+import cats.implicits._
 
 import scala.concurrent.{Future, Promise}
 import scala.util.Failure
@@ -90,9 +91,9 @@ class ValveTest extends AnyFlatSpec with Matchers with ScalaFutures with Integra
 
     val valve = new Valve(circuitBreaker, maxRetries = 6, delay = Valve.constant(10.millis))
 
-    val boundry = valve(f)
+    val boundary = valve(f)
 
-    whenReady(boundry("test")) { result =>
+    whenReady(boundary("test")) { result =>
       result should be("asdf!")
       tries should be(4)
     }
@@ -117,9 +118,9 @@ class ValveTest extends AnyFlatSpec with Matchers with ScalaFutures with Integra
 
     val valve = new Valve(circuitBreaker, maxRetries = 2, delay = Valve.constant(10.millis))
 
-    val boundry = valve(f)
+    val boundary = valve(f)
 
-    whenReady(boundry("test").failed) { exception =>
+    whenReady(boundary("test").failed) { exception =>
       exception should be(thrown)
       tries should be(3)
     }
@@ -145,9 +146,9 @@ class ValveTest extends AnyFlatSpec with Matchers with ScalaFutures with Integra
 
     val valve = new Valve(circuitBreaker, maxRetries = 6, delay = Valve.constant(10.millis), logger)
 
-    val boundry = valve(f)
+    val boundary = valve(f)
 
-    whenReady(boundry("test")) { result =>
+    whenReady(boundary("test")) { result =>
       log should contain theSameElementsAs List(
         "Retry #1 of 6 delaying milliseconds=10",
         "Retry #2 of 6 delaying milliseconds=10",
@@ -171,5 +172,29 @@ class ValveTest extends AnyFlatSpec with Matchers with ScalaFutures with Integra
     valve(Valve.liftFailedValues(policy)(f))("asdf!", "fdsa")
 
     whenReady(failed.future) { _ should be(exception) }
+  }
+
+  it should "let you turn an exception into another value while still trigger the circuit breaker" in {
+    case class Error(i: Int) extends Throwable
+    var tries = 0
+
+    val circuitBreaker = new (Future ~> Future) {
+      def apply[T](f: Future[T]): Future[T] = f
+    }
+
+    val f = (_: Either[Int, String]) => { tries += 1; Future.failed(new Error(1)) }
+
+    val valve = new Valve(circuitBreaker, maxRetries = 3, delay = Valve.constant(10.millis))
+
+    val recoverWith: PartialFunction[Throwable, Future[Either[Int, String]]] = {
+      case Error(int) => Future.successful(int.asLeft)
+    }
+
+    val boundary = valve(recoverWith)(f)
+
+    whenReady(boundary("test".asRight[Int])) { int =>
+      int should be(1.asLeft)
+      tries should be(4)
+    }
   }
 }
