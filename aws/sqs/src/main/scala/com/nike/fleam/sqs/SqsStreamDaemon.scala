@@ -1,7 +1,7 @@
 package com.nike.fleam
 package sqs
 
-import akka.stream.ActorMaterializer
+import akka.stream.{ActorMaterializer, UniqueKillSwitch}
 import akka.stream.scaladsl._
 import configuration.SqsQueueProcessingConfiguration
 import com.amazonaws.regions.Regions
@@ -34,10 +34,10 @@ object SqsStreamDaemon {
     client = AmazonSQSAsyncClientBuilder.standard().withRegion(Regions.fromName(sqsConfig.region)).build()
   )
 
-  def apply(
+  def apply[Mat](
       name: String,
       sqsConfig: SqsQueueProcessingConfiguration,
-      pipeline: Flow[Message, Message, akka.NotUsed],
+      pipeline: Flow[Message, Message, Mat],
       client: AmazonSQSAsync
     )(implicit
       ec: ExecutionContext
@@ -50,7 +50,7 @@ object SqsStreamDaemon {
       SqsDelete(client).forQueue(sqsConfig.queue.url).toFlow[Message](sqsConfig.delete).toMat(Sink.ignore)(Keep.right)
 
     def start(implicit materializer: ActorMaterializer) =
-      daemon.start[Message, Message, akka.NotUsed, akka.Done](source, pipeline, sink)
+      daemon.start[Message, Message, UniqueKillSwitch, Mat, akka.Done](source, pipeline, sink)
 
     def stop(): Future[Unit] = daemon.stop()
   }

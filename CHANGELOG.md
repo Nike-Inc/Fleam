@@ -1,6 +1,12 @@
 Fleam release notes
 -------------------
 
+## Fleam 7.0.0
+* Changes the materializer for SqsSource to a UniqueKillSwitch to allow the source to be stopped without items in the
+  buffer.
+* Changes StreamDaemon to keep all of the materializers used by the different segments of the pipeline. When `stop` is
+  called any KillSwitch materializers will be shutdown.
+
 ## Fleam 6.0.0
 * Adds the ability to recover exceptions while using a Valve to avoid having elements dropped by akka streams
   See the docs for an example usage

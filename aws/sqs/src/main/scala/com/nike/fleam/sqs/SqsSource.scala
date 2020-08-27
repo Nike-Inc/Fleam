@@ -4,7 +4,7 @@ package sqs
 import com.nike.fleam.configuration._
 import sqs.configuration._
 import akka.stream.scaladsl._
-import akka.stream.ThrottleMode
+import akka.stream.{KillSwitches, ThrottleMode, UniqueKillSwitch}
 import com.amazonaws.services.sqs.AmazonSQSAsync
 import com.amazonaws.services.sqs.model._
 import com.nike.fawcett.sqs._
@@ -33,7 +33,7 @@ class SqsSource(fetchMessages: SqsSource.Fetch, messageModifier: Message => Mess
 
   def forQueue(
     config: SqsQueueProcessingConfiguration
-  ): Source[Message, akka.NotUsed] = forQueue(
+  ): Source[Message, UniqueKillSwitch] = forQueue(
     url = config.queue.url,
     batchSize = config.source.batchSize,
     parallelism = config.source.parallelism,
@@ -47,7 +47,7 @@ class SqsSource(fetchMessages: SqsSource.Fetch, messageModifier: Message => Mess
       parallelism: Int = Default.Sqs.sourceConfig.parallelism,
       config: Option[ThrottleConfiguration] = Default.Sqs.sourceConfig.throttle,
       attributeNames: Set[String] = Default.Sqs.attributeNames,
-      waitTimeSeconds: Int = 0): Source[Message, akka.NotUsed] = {
+      waitTimeSeconds: Int = 0): Source[Message, UniqueKillSwitch] = {
 
     val request = new ReceiveMessageRequest()
       .withQueueUrl(url)
@@ -62,6 +62,7 @@ class SqsSource(fetchMessages: SqsSource.Fetch, messageModifier: Message => Mess
     } getOrElse Flow[SqsSource.Fetch]
 
     Source.repeat(fetchMessages)
+      .viaMat(KillSwitches.single)(Keep.right)
       .via(throttling)
       .mapAsync(parallelism)(_(request))
       .map(ReceiveMessageResultLens.messages.get)

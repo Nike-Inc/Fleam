@@ -84,4 +84,24 @@ class SqsSourceTest extends AnyFlatSpec with Matchers with ScalaFutures {
     )
     whenReady(result) { _.map(_.asScala.toMap) should contain theSameElementsAs expected}
   }
+
+  it should "be killable" in {
+    val url = "http://test/queue"
+    val response = new ReceiveMessageResult()
+      .withMessages(
+        new Message().withBody("Message 1"),
+        new Message().withBody("Message 2")
+      )
+
+    val fetcher: SqsSource.Fetch = (request: ReceiveMessageRequest) => {
+      Future.successful(response)
+    }
+
+    val source = new SqsSource(fetcher).forQueue(url)
+
+    val (killSwitch, result) = source.map(_.getBody).toMat(Sink.seq)(Keep.both).run()
+    killSwitch.shutdown()
+    whenReady(result) { _ shouldBe a[Seq[_]] }
+
+  }
 }

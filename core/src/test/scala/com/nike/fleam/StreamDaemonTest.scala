@@ -1,12 +1,12 @@
 package com.nike.fleam
 
 import akka.actor.ActorSystem
-import akka.stream.{ ActorMaterializer, KillSwitch, ThrottleMode }
+import akka.stream.{ ActorMaterializer, ThrottleMode }
 import akka.stream.scaladsl._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.concurrent.ScalaFutures
-import scala.concurrent.{ Future, Promise }
+import scala.concurrent.Promise
 import scala.concurrent.duration._
 
 /** Copyright 2020-present, Nike, Inc.
@@ -50,19 +50,8 @@ class StreamDaemonTest extends AnyFlatSpec with Matchers with ScalaFutures {
       pipeline = Flow[Int],
       sink = Sink.fold[Int, Int](0)(_ + _))
 
-      daemon.stop() andThen { case _ =>  actorSystem.terminate }
+    daemon.stop().onComplete  { case _ =>  actorSystem.terminate }
 
-    val result: Future[(KillSwitch, Int)] =
-      for {
-        killSwitch <- daemon.killSwitch
-        sum <- sum
-      } yield {
-        (killSwitch, sum)
-      }
-
-
-    whenReady(result) { case (killSwitch, sum) =>
-      sum should not be(0)
-    }
+    whenReady(sum) { _ should not be(0) }
   }
 }
