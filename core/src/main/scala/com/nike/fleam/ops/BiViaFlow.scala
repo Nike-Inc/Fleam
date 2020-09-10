@@ -13,17 +13,17 @@ import scala.language.implicitConversions
 
 
 trait BiViaFlowOps {
-  implicit def biViaFlowOps[In, L, R](flow: Flow[In, Either[L, R], akka.NotUsed]): BiViaFlow[In, L, R] =
+  implicit def biViaFlowOps[In, L, R](flow: Graph[FlowShape[In, Either[L, R]], akka.NotUsed]): BiViaFlow[In, L, R] =
     new BiViaFlow(flow)
 }
 
 object BiViaFlowOps extends BiViaFlowOps
 
-class BiViaFlow[In, L, R](val flow: Flow[In, Either[L, R], akka.NotUsed]) extends AnyVal {
+class BiViaFlow[In, L, R](val flow: Graph[FlowShape[In, Either[L, R]], akka.NotUsed]) extends AnyVal {
   /** Process each side of an Either through a separate Flows and then combine the result back into an Either
    *  Does not preserve order
    */
-  def biVia[L1, R1](left: Flow[L, L1, akka.NotUsed], right: Flow[R, R1, akka.NotUsed]): Flow[In, Either[L1, R1], akka.NotUsed] =
+  def biVia[L1, R1](left: Graph[FlowShape[L, L1], akka.NotUsed], right: Graph[FlowShape[R, R1], akka.NotUsed]): Flow[In, Either[L1, R1], akka.NotUsed] =
     Flow.fromGraph(GraphDSL.create() { implicit builder =>
       import GraphDSL.Implicits._
       val partition = builder.add(Partition[Either[L, R]](2, _.fold(_ => 0, _ => 1)))
@@ -46,11 +46,11 @@ class BiViaFlow[In, L, R](val flow: Flow[In, Either[L, R], akka.NotUsed]) extend
   /** Process right side of Either through a flow
    *  Does not preserve order
    */
-  def viaRight[R1](right: Flow[R, R1, akka.NotUsed]) = biVia[L, R1](left = Flow[L], right = right)
+  def viaRight[R1](right: Graph[FlowShape[R, R1], akka.NotUsed]) = biVia[L, R1](left = Flow[L], right = right)
 
   /** Process left side of Either through a flow
    *  Does not preserve order
    */
-  def viaLeft[L1](left: Flow[L, L1, akka.NotUsed]) = biVia[L1, R](left = left, right = Flow[R])
+  def viaLeft[L1](left: Graph[FlowShape[L, L1], akka.NotUsed]) = biVia[L1, R](left = left, right = Flow[R])
 }
 

@@ -1,5 +1,6 @@
 package com.nike.fleam.ops
 
+import akka.stream._
 import akka.stream.scaladsl._
 import scala.language.implicitConversions
 
@@ -11,11 +12,11 @@ import scala.language.implicitConversions
  **/
 
 trait TupleHelperSourceOps {
-  implicit def tupleHelperSourceOps[T, U, Mat](source: Source[(T, U), Mat]): TupleHelperSource[T, U, Mat] =
+  implicit def tupleHelperSourceOps[T, U, Mat](source: Graph[SourceShape[(T, U)], Mat]): TupleHelperSource[T, U, Mat] =
     new TupleHelperSource(source)
 }
 
-class TupleHelperSource[T, U, Mat](val source: Source[(T, U), Mat]) extends AnyVal {
-  def mapRight[V](f: (U) => V): Source[(T, V), Mat] = source.map { case (t, u) => t -> f(u) }
-  def mapLeft[V](f: (T) => V): Source[(V, U), Mat] = source.map { case (t, u) => f(t) -> u }
+class TupleHelperSource[T, U, Mat](val source: Graph[SourceShape[(T, U)], Mat]) extends AnyVal {
+  def mapRight[V](f: (U) => V): Source[(T, V), Mat] = Source.fromGraph(source).map { case (t, u) => t -> f(u) }
+  def mapLeft[V](f: (T) => V): Source[(V, U), Mat] = Source.fromGraph(source).map { case (t, u) => f(t) -> u }
 }

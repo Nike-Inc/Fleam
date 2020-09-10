@@ -13,14 +13,14 @@ import scala.language.implicitConversions
  **/
 
 trait TickingGroupedWithinFlowOps {
-  implicit def tickingGroupedWithinFlowOps[In, Out](flow: Flow[In, Out, akka.NotUsed]): TickingGroupedWithinFlow[In, Out] =
+  implicit def tickingGroupedWithinFlowOps[In, Out](flow: Graph[FlowShape[In, Out], akka.NotUsed]): TickingGroupedWithinFlow[In, Out] =
     new TickingGroupedWithinFlow(flow)
 }
 
 object TickingGroupedWithinFlowOps extends TickingGroupedWithinFlowOps
 
 
-class TickingGroupedWithinFlow[In, Out](val flow: Flow[In, Out, akka.NotUsed]) extends AnyVal {
+class TickingGroupedWithinFlow[In, Out](val flow: Graph[FlowShape[In, Out], akka.NotUsed]) extends AnyVal {
   /** A form of groupedWithin that emits empty Seqs even if no items have passed through within the allotted time. */
   def tickingGroupedWithin(batchSize: Int, within: FiniteDuration): Flow[In, Seq[Out], akka.NotUsed] = Flow.fromGraph {
     GraphDSL.create() { implicit builder =>
@@ -35,7 +35,7 @@ class TickingGroupedWithinFlow[In, Out](val flow: Flow[In, Out, akka.NotUsed]) e
       )
       val merge = builder.add(MergePreferred[Seq[Out]](secondaryPorts = 1, eagerComplete = true))
       val inFlow = builder.add(
-        flow
+        Flow.fromGraph(flow)
           .groupedWithin(batchSize, within)
       )
 

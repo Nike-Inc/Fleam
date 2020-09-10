@@ -6,6 +6,11 @@ Fleam release notes
   buffer.
 * Changes StreamDaemon to keep all of the materializers used by the different segments of the pipeline. When `stop` is
   called any KillSwitch materializers will be shutdown.
+* Functions that directly took `Flow` or `Source` now take graph shapes for better compatibility. This shouldn't affect
+  existing code.
+* `Stream` and `EitherStream` have been refactored internally to apply the materializer sooner. This shouldn't affect
+  existing code unless you're directly using lower level functions, in which case just remove the materializer type
+  parameter.
 
 ## Fleam 6.0.0
 * Adds the ability to recover exceptions while using a Valve to avoid having elements dropped by akka streams

@@ -16,7 +16,7 @@ trait MetricsLogger[MetricWrapper] {
   type Client = MetricWrapper => Future[Unit]
   val client: Client
 
-  def log[T](f: Flow[T, MetricWrapper, _], filter: T => Boolean = (_: T) => true):
+  def log[T](f: Graph[FlowShape[T, MetricWrapper], _], filter: T => Boolean = (_: T) => true):
       Graph[FlowShape[T, T], akka.NotUsed] = GraphDSL.create() { implicit builder =>
     import GraphDSL.Implicits._
     val broadcast = builder.add(Broadcast[T](2))

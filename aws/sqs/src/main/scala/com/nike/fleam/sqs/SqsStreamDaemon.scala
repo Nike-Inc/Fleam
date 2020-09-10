@@ -1,7 +1,7 @@
 package com.nike.fleam
 package sqs
 
-import akka.stream.{ActorMaterializer, UniqueKillSwitch}
+import akka.stream.{ActorMaterializer, FlowShape, Graph, UniqueKillSwitch}
 import akka.stream.scaladsl._
 import configuration.SqsQueueProcessingConfiguration
 import com.amazonaws.regions.Regions
@@ -24,7 +24,7 @@ object SqsStreamDaemon {
   def apply(
       name: String,
       sqsConfig: SqsQueueProcessingConfiguration,
-      pipeline: Flow[Message, Message, akka.NotUsed]
+      pipeline: Graph[FlowShape[Message, Message], akka.NotUsed]
     )(implicit
       ec: ExecutionContext
     ): SimplifiedStreamDeamon[akka.Done] = apply(
@@ -37,7 +37,7 @@ object SqsStreamDaemon {
   def apply[Mat](
       name: String,
       sqsConfig: SqsQueueProcessingConfiguration,
-      pipeline: Flow[Message, Message, Mat],
+      pipeline: Graph[FlowShape[Message, Message], Mat],
       client: AmazonSQSAsync
     )(implicit
       ec: ExecutionContext
