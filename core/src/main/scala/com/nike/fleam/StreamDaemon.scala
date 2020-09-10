@@ -16,33 +16,33 @@ import scala.concurrent.ExecutionContext
 object StreamDaemon {
   val logger = LoggerFactory.getLogger(this.getClass)
 
-  def addKillSwitch[Out, Mat](source: Source[Out, Mat]): Source[Out, UniqueKillSwitch] =
-    source.viaMat(KillSwitches.single)(Keep.right)
+  def addKillSwitch[Out, Mat](source: Source[Out, Mat]): Source[Out, (Mat, UniqueKillSwitch)] =
+    source.viaMat(KillSwitches.single)(Keep.both)
 }
 
 class StreamDaemon(name: String)(implicit ec: ExecutionContext) {
   import StreamDaemon._
 
-  private val killSwitchPromise = Promise[KillSwitch]()
-  val killSwitch = killSwitchPromise.future
+  private val killSwitchPromise = Promise[List[KillSwitch]]()
+  val killSwitches: Future[List[KillSwitch]] = killSwitchPromise.future
 
-  def start[SourceOut, FlowOut, Mat, SinkOut](
-      source: Source[SourceOut, Mat],
-      pipeline: Flow[SourceOut, FlowOut, Mat],
+  def start[SourceOut, FlowOut, SourceMat, PipelineMat, SinkOut](
+      source: Source[SourceOut, SourceMat],
+      pipeline: Flow[SourceOut, FlowOut, PipelineMat],
       sink: Sink[FlowOut, Future[SinkOut]]
     )(implicit materializer: ActorMaterializer): Future[SinkOut] = {
 
     logger.info(s"starting $name stream...")
-    val graph: RunnableGraph[(UniqueKillSwitch, Future[SinkOut])] = addKillSwitch(source)
-      .via(pipeline)
+    val graph: RunnableGraph[(((SourceMat, UniqueKillSwitch), PipelineMat), Future[SinkOut])] = addKillSwitch(source)
+      .viaMat(pipeline)(Keep.both)
       .toMat(sink)(Keep.both)
-    val (ks, out) = graph.run()
-    killSwitchPromise.success(ks)
+    val (((sourceMat, ks), pipelineMat), out) = graph.run()
+    killSwitchPromise.success(List(sourceMat, ks, pipelineMat).collect { case killSwitch: KillSwitch => killSwitch })
     out
   }
 
   def stop(): Future[Unit] = {
-    logger.info(s"stopping $name string‥.")
-    killSwitch.map(_.shutdown())
+    logger.info(s"stopping $name stream...")
+    killSwitches.map(_.map(_.shutdown()))
   }
 }
