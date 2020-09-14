@@ -16,8 +16,8 @@ import scala.concurrent.ExecutionContext
 object StreamDaemon {
   val logger = LoggerFactory.getLogger(this.getClass)
 
-  def addKillSwitch[Out, Mat](source: Source[Out, Mat]): Source[Out, (Mat, UniqueKillSwitch)] =
-    source.viaMat(KillSwitches.single)(Keep.both)
+  def addKillSwitch[Out, Mat](source: Graph[SourceShape[Out], Mat]): Source[Out, (Mat, UniqueKillSwitch)] =
+    Source.fromGraph(source).viaMat(KillSwitches.single)(Keep.both)
 }
 
 class StreamDaemon(name: String)(implicit ec: ExecutionContext) {
@@ -27,9 +27,9 @@ class StreamDaemon(name: String)(implicit ec: ExecutionContext) {
   val killSwitches: Future[List[KillSwitch]] = killSwitchPromise.future
 
   def start[SourceOut, FlowOut, SourceMat, PipelineMat, SinkOut](
-      source: Source[SourceOut, SourceMat],
-      pipeline: Flow[SourceOut, FlowOut, PipelineMat],
-      sink: Sink[FlowOut, Future[SinkOut]]
+      source: Graph[SourceShape[SourceOut], SourceMat],
+      pipeline: Graph[FlowShape[SourceOut, FlowOut], PipelineMat],
+      sink: Graph[SinkShape[FlowOut], Future[SinkOut]]
     )(implicit materializer: ActorMaterializer): Future[SinkOut] = {
 
     logger.info(s"starting $name stream...")

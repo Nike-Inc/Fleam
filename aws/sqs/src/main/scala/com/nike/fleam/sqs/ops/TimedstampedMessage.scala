@@ -1,6 +1,7 @@
 package com.nike.fleam.sqs
 package ops
 
+import akka.stream._
 import akka.stream.scaladsl._
 import com.amazonaws.services.sqs.model.Message
 import java.time.Instant
@@ -14,19 +15,19 @@ import scala.language.implicitConversions
  **/
 
 trait TimestampedMessageOps {
-  implicit def timestampedMessageSourceOps[Mat](source: Source[Message, Mat]): TimestampedMessageSource[Mat] =
+  implicit def timestampedMessageSourceOps[Mat](source: Graph[SourceShape[Message], Mat]): TimestampedMessageSource[Mat] =
     new TimestampedMessageSource[Mat](source)
 
-  implicit def timestampedMessageFlowOps[In, Mat](flow: Flow[In, Message, Mat]): TimestampedMessageFlow[In, Mat] =
+  implicit def timestampedMessageFlowOps[In, Mat](flow: Graph[FlowShape[In, Message], Mat]): TimestampedMessageFlow[In, Mat] =
     new TimestampedMessageFlow[In, Mat](flow)
 }
 
-class TimestampedMessageSource[Mat](val source: Source[Message, Mat]) extends AnyVal {
+class TimestampedMessageSource[Mat](val source: Graph[SourceShape[Message], Mat]) extends AnyVal {
   def timestampMessage(now: () => Instant = () => Instant.now): Source[RetrievedMessage, Mat] =
-    source.map(message => RetrievedMessage(message, now()))
+    Source.fromGraph(source).map(message => RetrievedMessage(message, now()))
 }
 
-class TimestampedMessageFlow[In, Mat](val flow: Flow[In, Message, Mat]) extends AnyVal {
+class TimestampedMessageFlow[In, Mat](val flow: Graph[FlowShape[In, Message], Mat]) extends AnyVal {
   def timestampMessage(now: () => Instant = () => Instant.now): Flow[In, RetrievedMessage, Mat] =
-    flow.map(message => RetrievedMessage(message, now()))
+    Flow.fromGraph(flow).map(message => RetrievedMessage(message, now()))
 }

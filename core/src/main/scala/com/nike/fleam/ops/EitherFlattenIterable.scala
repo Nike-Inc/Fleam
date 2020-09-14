@@ -2,6 +2,7 @@ package com.nike.fleam
 package ops
 
 import cats.implicits._
+import akka.stream._
 import akka.stream.scaladsl._
 import scala.collection.immutable.Iterable
 import scala.language.implicitConversions
@@ -15,20 +16,20 @@ import scala.language.implicitConversions
 
 trait EitherFlattenIterableOps {
 
-  implicit def eitherFlattenIterableFlowOps[A, L, R, Mat](flow: Flow[A, Either[L, Iterable[R]], Mat]):
-    EitherFlattenIterable[Flow[A, ?, ?], L, R, Mat] =
-      new EitherFlattenIterable[Flow[A, ?, ?], L, R, Mat](flow)
+  implicit def eitherFlattenIterableFlowOps[A, L, R, Mat](flow: Graph[FlowShape[A, Either[L, Iterable[R]]], Mat]):
+    EitherFlattenIterable[Flow[A, ?, Mat], L, R] =
+      new EitherFlattenIterable[Flow[A, ?, Mat], L, R](Flow.fromGraph(flow))
 
-  implicit def eitherFlattenIterableSourceOps[L, R, Mat](source: Source[Either[L, Iterable[R]], Mat]):
-    EitherFlattenIterable[Source, L, R, Mat] =
-      new EitherFlattenIterable[Source, L, R, Mat](source)
+  implicit def eitherFlattenIterableSourceOps[L, R, Mat](source: Graph[SourceShape[Either[L, Iterable[R]]], Mat]):
+    EitherFlattenIterable[Source[?, Mat], L, R] =
+      new EitherFlattenIterable[Source[?, Mat], L, R](Source.fromGraph(source))
 }
 
 object EitherFlattenIterableOps extends EitherFlattenIterableOps
 
-class EitherFlattenIterable[S[_, _], L, R, Mat](val stream: S[Either[L, Iterable[R]], Mat]) extends AnyVal {
+class EitherFlattenIterable[S[_], L, R](val stream: S[Either[L, Iterable[R]]]) extends AnyVal {
   /** Converts a `Either[L, Iterable[R]]` into individual `Either[L, R]`. Will not continue for inifinite sized mutable iterables.  */
-  def flatten(implicit es: EitherStream[S, L, Iterable[R], Mat]): S[Either[L, R], Mat] = es.flatMapConcat(stream) {
+  def flatten(implicit es: EitherStream[S, L, Iterable[R]]): S[Either[L, R]] = es.flatMapConcat(stream) {
     case Left(l) => Source.single(l.asLeft[R])
     case Right(rs: Iterable[R]) => Source(rs).map(Right(_))
     case Right(rs) => Source(rs).map(Right(_))

@@ -12,18 +12,18 @@ import scala.language.implicitConversions
  **/
 
 trait BroadcastMergeSourceOps {
-  implicit def broadcastMergeSourceOps[In](source: Source[In, akka.NotUsed]): BroadcastMergeSource[In] =
+  implicit def broadcastMergeSourceOps[In](source: Graph[SourceShape[In], akka.NotUsed]): BroadcastMergeSource[In] =
     new BroadcastMergeSource(source)
 }
 
 object BroadcastMergeSourceOps extends BroadcastMergeSourceOps
 
-class BroadcastMergeSource[In](val source: Source[In, akka.NotUsed]) extends AnyVal {
+class BroadcastMergeSource[In](val source: Graph[SourceShape[In], akka.NotUsed]) extends AnyVal {
   /** Processes element through all the flows passed in and joins the results into a stream.
    *  Each flow must have the same in and out types.
    *  Does not preserve order
    */
-  def broadcastMerge[Out](flows: Flow[In, Out, akka.NotUsed]*): Source[Out, akka.NotUsed] =
+  def broadcastMerge[Out](flows: Graph[FlowShape[In, Out], akka.NotUsed]*): Source[Out, akka.NotUsed] =
     Source.fromGraph(GraphDSL.create() { implicit builder =>
       import GraphDSL.Implicits._
       val length = flows.length
