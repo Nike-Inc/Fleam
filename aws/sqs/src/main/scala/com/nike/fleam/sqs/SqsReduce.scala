@@ -28,7 +28,7 @@ sealed trait SqsReduceError[Item]
 case class Reduced[Item](item: Item, batchOf: Int, enqueueResult: SendMessageResult) extends SqsReduceError[Item]
 case class EnqueueError[Item](error: AmazonSQSException, item: Item, reducedMessage: Message) extends SqsReduceError[Item]
 case class FailedDelete[Item](batchResult: FailedResult[Message], item: Item) extends SqsReduceError[Item]
-case class BadKey[Item](error: MessageError, item: Item) extends SqsReduceError[Item]
+case class MissingKey[Item](error: MessageError, item: Item) extends SqsReduceError[Item]
 
 object SqsReduce {
   def apply(
@@ -40,7 +40,7 @@ object SqsReduce {
       SqsEnqueue(client)
         .forQueue(config.queue.url)
         .single(message)(implicitly[ToMessage[Message]]),
-    deleteMessages = SqsDelete(client).forQueue(config.queue.url).batched
+    deleteMessages = SqsDelete(client).forQueue(config.queue.url).batched[Message, MessageId]
   )
 }
 
@@ -54,11 +54,25 @@ class SqsReduce(
     deleteMessages: List[Message] => Future[BatchResult[Message]]
   )(implicit ec: ExecutionContext) {
 
-  def flow[Item : Semigroup : ContainsMessage : ToMessage : Keyed[?, Either[MessageError, Key]], Key : Order]:
+  /** Reduces batches of messages
+   *
+   *  If multiple messages belong together as a single update this can combine them into a single one and renqueue.
+   *
+   *  @tparam Item Input type that contains a message and provides a key to track deletes.
+   *               Must provide a semigroup instance for Item type so that items can be combined.
+   *               Must provide a ToMessage instance so the reduced items can be enqueued in a new `Message`.
+   *               Keyed provides a method of extracting a key to group messages by. This is usually done with the
+   *               the message's MessageGroupId and can be imported from [[com.nike.fleam.sqs.implicits]]
+   *  @tparam GroupingKey Type of GroupingKey used for grouping messages and must be orderable. The default common
+   *                      pattern of using MessageGroupId can be imported from [[com.nike.fleam.sqs.implicits.]]
+   *  @return Flow from Item to either SqsReduceError or Items that had no duplicates
+   */
+  def flow[Item : Semigroup : ContainsMessage : ToMessage : Keyed[?, Either[MessageError, GroupingKey]], GroupingKey : Order]:
       Flow[Item, Either[SqsReduceError[Item], Item], akka.NotUsed] = {
     config.grouping.toFlow[Item]
-      .flatMapConcat { group =>
-        val (noKeys, keyed) = group
+      .flatMapConcat { batch =>
+
+        val (noKeys, keyed) = batch
           .toList
           .partitionEither { item =>
             item.getKey.bimap(_ -> item, _ -> item)
@@ -71,7 +85,7 @@ class SqsReduce(
           }
           .toList
 
-        val errors = noKeys.map { case (error, item) => NonEmptyList.of(BadKey(error, item)).asLeft }
+        val errors = noKeys.map { case (error, item) => NonEmptyList.of(MissingKey(error, item)).asLeft }
 
         Source[Either[NonEmptyList[SqsReduceError[Item]], NonEmptyList[Item]]](errors ++ grouped)
       }

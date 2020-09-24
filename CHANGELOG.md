@@ -14,6 +14,11 @@ Fleam release notes
 * Changes the Akka version to 2.6.8.
 * Changes usages of `ActorMaterializer` to `Materializer` and other smaller changes as per migration notes (https://doc.akka.io/docs/akka/current/project/migration-guide-2.5.x-2.6.x.html). 
 * Updated slf4j versions and overrides to eliminate inconsistency warnings.  
+* Adds the ability to choose the key used to do batch deletes with `SqsDelete`. If upgrading use `MessageId` as the
+  second parameter type to `toFlow` and `batched`. This allows you to use a custom id when desired instead of using the
+  default messageId which may be duplicated due to the at-least-once nature of SQS.
+* Changes `MissingMessageGroupId` to `MissingGroupingKey` for `SqsReduce` to make it more general.
+* Adds value class for `MessageGroupId`. Usages of SqsReduce will need to switch from `String` to `MessageGroupId`.
 
 ## Fleam 6.0.0
 * Adds the ability to recover exceptions while using a Valve to avoid having elements dropped by akka streams

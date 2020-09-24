@@ -18,6 +18,10 @@ package sqs {
   case class EntryError(code: String, reason: String)
 
   case class RetrievedMessage(message: Message, timestamp: Instant)
+
+  case class MessageId(value: String) extends AnyVal
+
+  case class MessageGroupId(value: String) extends AnyVal
 }
 
 package object sqs {
