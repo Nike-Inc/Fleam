@@ -1,12 +1,15 @@
 val currentScalaVersion = "2.13.1"
 val scalaVersions = Seq("2.12.10", currentScalaVersion)
 val awsVersion = "1.11.707"
-val akkaVersion = "2.5.26"
+val akkaVersion = "2.6.8"
 val catsCore = "org.typelevel" %% "cats-core" % "2.1.0"
 
 val checkEvictionsTask = taskKey[Unit]("Task that fails build if there are evictions")
 
-lazy val depOverrides = Seq()
+lazy val depOverrides = Seq(
+  "org.slf4j" % "slf4j-api" % "1.7.30",
+  "org.slf4j" % "jcl-over-slf4j" % "1.7.30"
+)
 
 lazy val commonSettings = Seq(
   resolvers += Resolver.sonatypeRepo("releases"),
@@ -23,8 +26,8 @@ lazy val commonSettings = Seq(
   }),
   libraryDependencies ++= Seq(
     "ch.qos.logback" % "logback-classic" % "1.2.3",
-    "org.slf4j" % "slf4j-api" % "1.7.25",
-    "org.slf4j" % "jcl-over-slf4j" % "1.7.25",
+    "org.slf4j" % "slf4j-api" % "1.7.30",
+    "org.slf4j" % "jcl-over-slf4j" % "1.7.30",
     "com.vladsch.flexmark" % "flexmark-all" % "0.35.10" % Test,
     "org.scalatest" %% "scalatest" % "3.1.0" % Test),
   dependencyOverrides ++= depOverrides,

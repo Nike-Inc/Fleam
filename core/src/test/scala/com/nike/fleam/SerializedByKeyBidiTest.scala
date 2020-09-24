@@ -120,6 +120,7 @@ class SerializedByKeyBidiTest extends AnyFlatSpec with Matchers with ScalaFuture
 
     val result = Source(examples)
       .via(bidi.join(flow))
+      .withAttributes(ResumeSupervisionStrategy)
       .runWith(Sink.seq)
 
     result.futureValue should contain theSameElementsAs(examples.filterNot(_.fail))

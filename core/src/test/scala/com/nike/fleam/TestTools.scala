@@ -1,8 +1,10 @@
 package com.nike.fleam
 
 import akka.actor.ActorSystem
-import akka.stream.{ActorMaterializer, ActorMaterializerSettings, Supervision}
+import akka.stream.{ActorAttributes, Materializer}
+import akka.stream.Supervision.Resume
 import com.typesafe.config.ConfigFactory
+
 import scala.concurrent.{Future, Promise}
 
 /** Copyright 2020-present, Nike, Inc.
@@ -15,11 +17,20 @@ import scala.concurrent.{Future, Promise}
 object TestTools {
 
   val config = ConfigFactory.load()
+  val ResumeSupervisionStrategy = ActorAttributes.supervisionStrategy( _ => Resume)
+
   implicit val actorSystem = ActorSystem("test", config)
   implicit val executionContext = actorSystem.dispatcher
-  implicit val materializer = ActorMaterializer(
-    ActorMaterializerSettings(actorSystem).withSupervisionStrategy(_ => Supervision.Resume)
-  )
+
+  /**
+   * When Fleam used Akka 2.5+, the materializer below used to have a supervision policy that was equivalent to
+   * [[ResumeSupervisionStrategy]] above. As materializers come about differently in Akka 2.6+,
+   * any such policy would be set on the stream itself (see [[SerializedByKeyBidiTest]] for example).
+   * Also see the Akka Migration Guide 2.5.x to 2.6.x
+   * [[https://doc.akka.io/docs/akka/current/project/migration-guide-2.5.x-2.6.x.html]]
+   */
+  implicit val materializer : Materializer = Materializer.matFromSystem(actorSystem)
+
   def checkSideEffect[A, B](process: Future[A], promise: Promise[B]): Future[B] =
     for {
       _ <- process

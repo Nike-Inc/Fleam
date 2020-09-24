@@ -78,7 +78,7 @@ class SerializedByKeyBidi[Key, In : Keyed[?, Key], Out : Keyed[?, Key]](
 
     override def preStart: Unit = {
       setKeepGoing(true)
-      schedulePeriodically(None, expirationInterval)
+      scheduleAtFixedRate(None, expirationInterval, expirationInterval)
     }
 
     override protected def onTimer(timerKey: Any): Unit = {

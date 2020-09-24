@@ -58,7 +58,7 @@ class CountersTest extends AnyFlatSpec with Matchers with ScalaFutures with Inte
   "countWithin" should "tick counts even when no values are passing through" in {
     val counter = Counters.countWithin[String](GroupedWithinConfiguration(batchSize = 100, within = 100.millis))
 
-    val result = Source.fromFuture(Future { Thread.sleep(1000); "asdf!" })
+    val result = Source.future(Future { Thread.sleep(1000); "asdf!" })
       .filter(_ => false)
       .via(counter)
       .runWith(Sink.seq)

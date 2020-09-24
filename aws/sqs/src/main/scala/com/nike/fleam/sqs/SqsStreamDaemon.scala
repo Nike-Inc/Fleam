@@ -1,7 +1,7 @@
 package com.nike.fleam
 package sqs
 
-import akka.stream.{ActorMaterializer, FlowShape, Graph, UniqueKillSwitch}
+import akka.stream.{Materializer, FlowShape, Graph, UniqueKillSwitch}
 import akka.stream.scaladsl._
 import configuration.SqsQueueProcessingConfiguration
 import com.amazonaws.regions.Regions
@@ -49,7 +49,7 @@ object SqsStreamDaemon {
     val sink: Sink[Message, Future[akka.Done]] =
       SqsDelete(client).forQueue(sqsConfig.queue.url).toFlow[Message](sqsConfig.delete).toMat(Sink.ignore)(Keep.right)
 
-    def start(implicit materializer: ActorMaterializer) =
+    def start(implicit materializer: Materializer) =
       daemon.start[Message, Message, UniqueKillSwitch, Mat, akka.Done](source, pipeline, sink)
 
     def stop(): Future[Unit] = daemon.stop()

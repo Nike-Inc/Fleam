@@ -30,7 +30,7 @@ class TickingGroupedWithinFlowTest extends AnyFlatSpec with Matchers with ScalaF
 
     val receivedGroup = Promise[Seq[Int]]
 
-    Source.fromFuture(Future { Thread.sleep(2000); 1 })
+    Source.future(Future { Thread.sleep(2000); 1 })
       .via(flow)
       .take(10)
       .map { group =>

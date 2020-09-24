@@ -29,11 +29,9 @@ need to be aware of the tuple and the flow only needs minimal boiler-plate for j
 
 ```scala mdoc:invisible
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 
 implicit val actorSystem = ActorSystem("tut")
 import actorSystem.dispatcher
-implicit val materializer = ActorMaterializer()
 ```
 
 ```scala mdoc:silent

@@ -1,6 +1,6 @@
 package com.nike.fleam
 
-import akka.stream.ActorMaterializer
+import akka.stream.Materializer
 import scala.concurrent.Future
 
 /** Copyright 2020-present, Nike, Inc.
@@ -15,7 +15,7 @@ trait SimplifiedStreamDeamon[SinkOut] {
     Runtime.getRuntime.addShutdownHook(new Thread(new Runnable() {
       override def run(): Unit = stop()
     }))
-  def start(implicit materializer: ActorMaterializer): Future[SinkOut]
+  def start(implicit materializer: Materializer): Future[SinkOut]
   def stop(): Future[Unit]
   registerShutdownHook()
 }
