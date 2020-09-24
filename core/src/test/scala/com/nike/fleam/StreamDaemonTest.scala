@@ -1,7 +1,7 @@
 package com.nike.fleam
 
 import akka.actor.ActorSystem
-import akka.stream.{ ActorMaterializer, ThrottleMode }
+import akka.stream.ThrottleMode
 import akka.stream.scaladsl._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -39,8 +39,6 @@ class StreamDaemonTest extends AnyFlatSpec with Matchers with ScalaFutures {
     // Create separate actor system since we're going to stop it.
     implicit val actorSystem = ActorSystem("StreamTest", TestTools.config)
     implicit val executionContext = actorSystem.dispatcher
-    implicit val materializer = ActorMaterializer()
-
     implicit val patienceConfig = PatienceConfig(timeout = 10.seconds, interval = 10.millis)
 
     val daemon = new StreamDaemon("test")

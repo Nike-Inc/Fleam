@@ -23,7 +23,7 @@ class TickingGroupedWithinSourceTest extends AnyFlatSpec with Matchers with Scal
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(timeout = 20.seconds, interval = 10.millis)
 
   it should "tick groups even when no values are passing from a source" in {
-    val result = Source.fromFuture(Future { Thread.sleep(2000); 1 })
+    val result = Source.future(Future { Thread.sleep(2000); 1 })
       .tickingGroupedWithin(batchSize = 100, within = 100.millis)
       .take(10)
       .runWith(Sink.seq)

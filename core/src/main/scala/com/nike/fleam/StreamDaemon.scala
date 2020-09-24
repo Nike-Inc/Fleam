@@ -30,7 +30,7 @@ class StreamDaemon(name: String)(implicit ec: ExecutionContext) {
       source: Graph[SourceShape[SourceOut], SourceMat],
       pipeline: Graph[FlowShape[SourceOut, FlowOut], PipelineMat],
       sink: Graph[SinkShape[FlowOut], Future[SinkOut]]
-    )(implicit materializer: ActorMaterializer): Future[SinkOut] = {
+    )(implicit materializer: Materializer): Future[SinkOut] = {
 
     logger.info(s"starting $name stream...")
     val graph: RunnableGraph[(((SourceMat, UniqueKillSwitch), PipelineMat), Future[SinkOut])] = addKillSwitch(source)

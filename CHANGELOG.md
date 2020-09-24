@@ -11,6 +11,9 @@ Fleam release notes
 * `Stream` and `EitherStream` have been refactored internally to apply the materializer sooner. This shouldn't affect
   existing code unless you're directly using lower level functions, in which case just remove the materializer type
   parameter.
+* Changes the Akka version to 2.6.8.
+* Changes usages of `ActorMaterializer` to `Materializer` and other smaller changes as per migration notes (https://doc.akka.io/docs/akka/current/project/migration-guide-2.5.x-2.6.x.html). 
+* Updated slf4j versions and overrides to eliminate inconsistency warnings.  
 
 ## Fleam 6.0.0
 * Adds the ability to recover exceptions while using a Valve to avoid having elements dropped by akka streams
