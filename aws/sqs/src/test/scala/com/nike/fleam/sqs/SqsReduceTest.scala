@@ -14,7 +14,6 @@ import org.scalatest.EitherValues
 import scala.jdk.CollectionConverters._
 import cats.Semigroup
 import cats.implicits._
-import com.nike.fleam.sqs.instances.MissingMessageGroupId
 import implicits._
 
 /** Copyright 2020-present, Nike, Inc.
@@ -78,7 +77,7 @@ class SqsReduceTest extends AnyFlatSpec with Matchers with ScalaFutures with Eit
       }
 
       val output = Source(messages)
-        .via(reduce.flow[Message, String])
+        .via(reduce.flow[Message, MessageGroupId])
         .runWith(Sink.seq)
 
       reEnqueued.future.futureValue shouldBe {
@@ -130,7 +129,7 @@ class SqsReduceTest extends AnyFlatSpec with Matchers with ScalaFutures with Eit
     }
 
     val output = Source(messages)
-      .via(reduce.flow[Message, String])
+      .via(reduce.flow[Message, MessageGroupId])
       .runWith(Sink.seq)
 
     reEnqueued.future.futureValue shouldBe {
@@ -168,7 +167,7 @@ class SqsReduceTest extends AnyFlatSpec with Matchers with ScalaFutures with Eit
     }
 
     val output = Source(messages)
-      .via(reduce.flow[Message, String])
+      .via(reduce.flow[Message, MessageGroupId])
       .runWith(Sink.seq)
 
     reEnqueued.future.futureValue shouldBe {
@@ -183,33 +182,6 @@ class SqsReduceTest extends AnyFlatSpec with Matchers with ScalaFutures with Eit
 
       messages.map { message =>
         EnqueueError(exception, message, combinedMessge).asLeft
-      }
-    }
-  }
-
-  it should "marked items with bad keys as such" in {
-
-    val reduce = new SqsReduce(
-      config = config,
-      reEnqueueMessages = { message =>
-        throw new Exception("Unpexected call to enqueue messages")
-      },
-      deleteMessages = { messages => throw new Exception("Unpexected call to delete messages") }
-    )
-
-    val messages = for { i <- 1 to 10 } yield {
-      new Message()
-        .withMessageId(i.toString)
-        // No group Id
-    }
-
-    val output = Source(messages)
-      .via(reduce.flow[Message, String])
-      .runWith(Sink.seq)
-
-    output.futureValue should contain theSameElementsAs {
-      messages.map { message =>
-        BadKey(MissingMessageGroupId(message), message).asLeft
       }
     }
   }

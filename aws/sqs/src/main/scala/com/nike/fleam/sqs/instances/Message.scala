@@ -3,6 +3,7 @@ package sqs
 package instances
 
 import com.amazonaws.services.sqs.model.Message
+import cats.{Order, Show}
 import cats.implicits._
 import com.nike.fawcett.sqs._
 import monocle.function.all._
@@ -15,12 +16,20 @@ import monocle.function.all._
  **/
 
 sealed trait MessageError
-case class MissingMessageGroupId(message: Message) extends MessageError
+case class MissingGroupingKey(message: Message) extends MessageError
 
 trait MessageInstances {
-  implicit val keyedMessage = Keyed.lift[Message, Either[MessageError, String]] { message =>
-    Either.fromOption(MessageLens.attributes composeLens at("MessageGroupId") get(message), MissingMessageGroupId(message))
+  implicit val messageGroupIdKeyed = Keyed.lift[Message, Either[MissingGroupingKey, MessageGroupId]] { message =>
+    Either.fromOption(
+      (MessageLens.attributes composeLens at(Attributes.MessageGroupId) get(message)).map(MessageGroupId),
+      MissingGroupingKey(message))
   }
+
+  implicit val messageGroupIdOrdering = Order.by[MessageGroupId, String](_.value)
+
+  implicit val messageIdKeyed = Keyed.lift[Message, MessageId](message => MessageId(message.getMessageId()))
+
+  implicit val showMessageId: Show[MessageId] = Show.show(_.value)
 
   implicit val messageToMessage = ToMessage.lift[Message](identity)
 }

@@ -73,9 +73,11 @@ val pipeline1 =
 Great, but what about deleting these messages? We need to be able to tell SQS we're done with them. Let's create a
 SqsDelete.
 ```scala
-import com.nike.fleam.sqs.SqsDelete
+import com.nike.fleam.sqs.{SqsDelete, MessageId}
+import com.nike.fleam.sqs.implicits._
+import cats.implicits._
 
-val sqsDelete = SqsDelete(sqsClient).forQueue(sqsConfig.queue.url).toFlow[Message](sqsConfig.delete)
+val sqsDelete = SqsDelete(sqsClient).forQueue(sqsConfig.queue.url).toFlow[Message, MessageId](sqsConfig.delete)
 ```
 
 Now we can add our `sqsDelete` to our pipeline.
