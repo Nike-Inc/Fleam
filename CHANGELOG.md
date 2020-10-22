@@ -19,6 +19,7 @@ Fleam release notes
   default messageId which may be duplicated due to the at-least-once nature of SQS.
 * Changes `MissingMessageGroupId` to `MissingGroupingKey` for `SqsReduce` to make it more general.
 * Adds value class for `MessageGroupId`. Usages of SqsReduce will need to switch from `String` to `MessageGroupId`.
+* Change the default config value for SQS long polling from 0 to 20 seconds
 
 ## Fleam 6.0.0
 * Adds the ability to recover exceptions while using a Valve to avoid having elements dropped by akka streams
