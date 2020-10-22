@@ -69,7 +69,7 @@ class SqsEnqueue(
       enqueueMessage(request)
     }
     def asFlow[T: ToMessage](sqsProcessing: SqsProcessingConfiguration = Default.Sqs.enqueueConfig)
-      (implicit ec: ExecutionContext): Flow[T, (List[T], SendMessageBatchResult), _] =
+      (implicit ec: ExecutionContext): Flow[T, (List[T], SendMessageBatchResult), akka.NotUsed] =
       Flow[T]
         .via(sqsProcessing.groupedWithin.toFlow)
         .mapAsync(sqsProcessing.parallelism) { ts =>
