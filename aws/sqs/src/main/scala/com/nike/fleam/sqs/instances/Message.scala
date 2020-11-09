@@ -27,8 +27,6 @@ trait MessageInstances {
 
   implicit val messageGroupIdOrdering = Order.by[MessageGroupId, String](_.value)
 
-  implicit val messageIdKeyed = Keyed.lift[Message, MessageId](message => MessageId(message.getMessageId()))
-
   implicit val showMessageId: Show[MessageId] = Show.show(_.value)
 
   implicit val messageToMessage = ToMessage.lift[Message](identity)

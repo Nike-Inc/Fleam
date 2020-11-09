@@ -2,7 +2,6 @@ package com.nike.fleam
 package sqs
 
 import akka.stream.scaladsl._
-import cats.implicits._
 import configuration.SqsProcessingConfiguration
 import com.nike.fleam.configuration.GroupedWithinConfiguration
 import org.scalatest.flatspec.AnyFlatSpec
@@ -12,7 +11,6 @@ import com.amazonaws.services.sqs.model._
 import scala.concurrent.duration._
 import scala.concurrent.{Future, Promise}
 import implicits._
-import scala.jdk.CollectionConverters._
 
 /** Copyright 2020-present, Nike, Inc.
  * All rights reserved.
@@ -46,8 +44,8 @@ class SqsDeleteTest extends AnyFlatSpec with Matchers with ScalaFutures with Int
       new Message().withMessageId("31").withReceiptHandle("31-receipt"))
 
     val entries = List(
-      new DeleteMessageBatchResultEntry().withId("30"),
-      new DeleteMessageBatchResultEntry().withId("31"))
+      new DeleteMessageBatchResultEntry().withId("0"),
+      new DeleteMessageBatchResultEntry().withId("1"))
 
     val deleteMessageBatchResult = new DeleteMessageBatchResult().withSuccessful(entries: _*)
 
@@ -63,8 +61,8 @@ class SqsDeleteTest extends AnyFlatSpec with Matchers with ScalaFutures with Int
     val deleteBatch: SqsDelete.Batch = (request: DeleteMessageBatchRequest) => {
       val expected = new DeleteMessageBatchRequest()
         .withQueueUrl(url)
-        .withEntries(new DeleteMessageBatchRequestEntry().withId("30").withReceiptHandle("30-receipt"))
-        .withEntries(new DeleteMessageBatchRequestEntry().withId("31").withReceiptHandle("31-receipt"))
+        .withEntries(new DeleteMessageBatchRequestEntry().withId("0").withReceiptHandle("30-receipt"))
+        .withEntries(new DeleteMessageBatchRequestEntry().withId("1").withReceiptHandle("31-receipt"))
       request should be(expected)
       Future.successful(deleteMessageBatchResult)
     }
@@ -75,7 +73,7 @@ class SqsDeleteTest extends AnyFlatSpec with Matchers with ScalaFutures with Int
       source
         .via(new SqsDelete(
           deleteMessageBatch = deleteBatch,
-          deleteMessage = unexpectedDeleteMessage).forQueue(url).toFlow[Message, MessageId](config)
+          deleteMessage = unexpectedDeleteMessage).forQueue(url).toFlow[Message](config)
         )
         .runWith(Sink.seq)
 
@@ -93,7 +91,7 @@ class SqsDeleteTest extends AnyFlatSpec with Matchers with ScalaFutures with Int
     val delete: List[Message] => Future[BatchResult[Message]] = new SqsDelete(
       deleteMessage = unexpectedDeleteMessage,
       deleteMessageBatch = unexpectedDeleteMessageBatch
-    ).forQueue(url).batched[Message, MessageId]
+    ).forQueue(url).batched[Message]
 
     val result = source.mapAsync(1)(delete).runWith(Sink.head)
 
@@ -105,7 +103,7 @@ class SqsDeleteTest extends AnyFlatSpec with Matchers with ScalaFutures with Int
 
     val request = Promise[DeleteMessageRequest]
 
-    val message = new Message().withMessageId("30").withReceiptHandle("30-receipt")
+    val message = new Message().withMessageId("0").withReceiptHandle("30-receipt")
 
     new SqsDelete(
       deleteMessage = { message => request.success(message); Future.successful(new DeleteMessageResult()) },
@@ -119,39 +117,4 @@ class SqsDeleteTest extends AnyFlatSpec with Matchers with ScalaFutures with Int
     }
   }
 
-  it should "let you specify a custom key for message batch id" in {
-    val url = "http://test/queue"
-
-    val sentRequest = Promise[DeleteMessageBatchRequest]
-
-    case class Foo(message: Message, id: String)
-    implicit val fooKeyed: Keyed[Foo, String] = Keyed.lift[Foo, String](_.id)
-    implicit val fooContainsMessage: ContainsMessage[Foo] = ContainsMessage.lift[Foo](_.message)
-
-    val messages = (for {
-      n <- 1 to 10
-    } yield { Foo(new Message().withMessageId("duplicate_id"), n.toString) }).toList
-
-    val delete: List[Foo] => Future[BatchResult[Foo]] = new SqsDelete(
-      deleteMessage = unexpectedDeleteMessage,
-      deleteMessageBatch = { request =>
-        sentRequest.success(request)
-        val result = request.getEntries.asScala.foldLeft(new DeleteMessageBatchResult()) { case (acc, entry) =>
-          acc.withSuccessful(new DeleteMessageBatchResultEntry().withId(entry.getId))
-        }
-        Future.successful(result)
-      }
-    ).forQueue(url).batched[Foo, String]
-
-    val result = delete(messages)
-
-    whenReady(sentRequest.future) { request =>
-      request.getEntries.asScala.map(_.getId) should contain theSameElementsAs (1 to 10).map(_.toString)
-    }
-
-    whenReady(result) {  batchResult =>
-      batchResult.successful.map(_.entry.getId) should contain theSameElementsAs (1 to 10).map(_.toString)
-    }
-
-  }
 }

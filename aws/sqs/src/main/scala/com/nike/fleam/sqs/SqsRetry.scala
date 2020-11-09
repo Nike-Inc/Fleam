@@ -87,7 +87,7 @@ object SqsRetry {
         SqsEnqueue(client, modifyBatchRequest = SqsEnqueue.delayMessagesBySeconds(delaySeconds))
           .forQueue(config.queue.url)
           .batched(messages)(implicitly[ToMessage[Message]], ec),
-      deleteMessages = SqsDelete(client).forQueue(config.queue.url).batched[Message, MessageId],
+      deleteMessages = SqsDelete(client).forQueue(config.queue.url).batched[Message],
       deadLetterEnqueueMessages = (messages, ec) =>
         SqsEnqueue(client)
           .forQueue(config.deadLetterQueue.url)
