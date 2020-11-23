@@ -25,21 +25,25 @@ object SqsStreamDaemon {
   def apply(
       name: String,
       sqsConfig: SqsQueueProcessingConfiguration,
-      pipeline: Graph[FlowShape[Message, Message], akka.NotUsed]
+      pipeline: Graph[FlowShape[Message, Message], akka.NotUsed],
+      batchDeleteResults: Graph[FlowShape[BatchResult[Message], BatchResult[Message]], akka.NotUsed] =
+        Flow[BatchResult[Message]]
     )(implicit
       ec: ExecutionContext
     ): SimplifiedStreamDeamon[akka.Done] = apply(
     name = name,
     sqsConfig = sqsConfig,
     pipeline = pipeline,
-    client = AmazonSQSAsyncClientBuilder.standard().withRegion(Regions.fromName(sqsConfig.region)).build()
+    client = AmazonSQSAsyncClientBuilder.standard().withRegion(Regions.fromName(sqsConfig.region)).build(),
+    batchDeleteResults
   )
 
   def apply[Mat](
       name: String,
       sqsConfig: SqsQueueProcessingConfiguration,
       pipeline: Graph[FlowShape[Message, Message], Mat],
-      client: AmazonSQSAsync
+      client: AmazonSQSAsync,
+      batchDeleteResults: Graph[FlowShape[BatchResult[Message], BatchResult[Message]], akka.NotUsed]
     )(implicit
       ec: ExecutionContext
     ): SimplifiedStreamDeamon[akka.Done] = new SimplifiedStreamDeamon[akka.Done] {
@@ -48,7 +52,10 @@ object SqsStreamDaemon {
 
     val source = SqsSource(client).forQueue(sqsConfig)
     val sink: Sink[Message, Future[akka.Done]] =
-      SqsDelete(client).forQueue(sqsConfig.queue.url).toFlow[Message, MessageId](sqsConfig.delete).toMat(Sink.ignore)(Keep.right)
+      SqsDelete(client).forQueue(sqsConfig.queue.url)
+        .toFlow[Message, MessageId](sqsConfig.delete)
+        .via(batchDeleteResults)
+        .toMat(Sink.ignore)(Keep.right)
 
     def start(implicit materializer: Materializer) =
       daemon.start[Message, Message, UniqueKillSwitch, Mat, akka.Done](source, pipeline, sink)

@@ -17,9 +17,12 @@ Fleam release notes
 * Adds the ability to choose the key used to do batch deletes with `SqsDelete`. If upgrading use `MessageId` as the
   second parameter type to `toFlow` and `batched`. This allows you to use a custom id when desired instead of using the
   default messageId which may be duplicated due to the at-least-once nature of SQS.
+* Adds the option to process the SQS delete `BatchResult`s via a flow passed to the `SqsStreamDaemon`.
 * Changes `MissingMessageGroupId` to `MissingGroupingKey` for `SqsReduce` to make it more general.
 * Adds value class for `MessageGroupId`. Usages of SqsReduce will need to switch from `String` to `MessageGroupId`.
 * Change the default config value for SQS long polling from 0 to 20 seconds
+* Changes SerializedByKeyBidi to take a buffer instead of forcing one.
+
 
 ## Fleam 6.0.0
 * Adds the ability to recover exceptions while using a Valve to avoid having elements dropped by akka streams
