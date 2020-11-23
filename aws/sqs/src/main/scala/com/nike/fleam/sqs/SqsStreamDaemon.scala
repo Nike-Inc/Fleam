@@ -8,7 +8,6 @@ import com.amazonaws.regions.Regions
 import com.amazonaws.services.sqs.{AmazonSQSAsync, AmazonSQSAsyncClientBuilder}
 import com.amazonaws.services.sqs.model.Message
 import instances.ContainsMessageInstances._
-import instances.MessageInstances._
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
@@ -56,6 +55,7 @@ object SqsStreamDaemon {
         .toFlow[Message, MessageId](sqsConfig.delete)
         .via(batchDeleteResults)
         .toMat(Sink.ignore)(Keep.right)
+
 
     def start(implicit materializer: Materializer) =
       daemon.start[Message, Message, UniqueKillSwitch, Mat, akka.Done](source, pipeline, sink)

@@ -40,7 +40,7 @@ object SqsReduce {
       SqsEnqueue(client)
         .forQueue(config.queue.url)
         .single(message)(implicitly[ToMessage[Message]]),
-    deleteMessages = SqsDelete(client).forQueue(config.queue.url).batched[Message, MessageId]
+    deleteMessages = SqsDelete(client).forQueue(config.queue.url).batched[Message]
   )
 }
 

@@ -1,8 +1,6 @@
 package com.nike.fleam
 package sqs
 
-import cats.Show
-import cats.implicits._
 import com.nike.fleam.configuration._
 import sqs.configuration._
 import com.amazonaws.services.sqs.model._
@@ -10,7 +8,6 @@ import com.amazonaws.services.sqs.AmazonSQSAsync
 import akka.stream.scaladsl._
 import ContainsMessage.ops._
 import com.nike.fawcett.sqs._
-import Keyed.ops._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -62,25 +59,22 @@ class SqsDelete(
 
     /** Deletes batches of messages
      *
-     *  @tparam T Input type that contains a message and provides a key to track deletes.
-     *            Due to the at-least-once nature of SQS it's possible to have batches with duplicate messages ids.
-     *            Providing an alternate unique id in your type can avoid this problem if desired.
-     *            Keyed and ContainsMessage for Message can be imported from com.nike.fleam.sqs.implicits._
-     *  @tparam Key Type of Key used for tracking deletes. It must provide an instance of Show.
-     *              For Messages use type `MessageId` with the default implicits provided to use the Amazon provided
-     *              message id.
-     *              Import cats.implicits._ to get a `Show` instance for `MessageId`.
+     *  Due to the at-least-once nature of SQS it's possible to have batches with duplicate messages.
+     *  SqsDelete will delete these duplicates without notification since the operation is idepempotent.
+     *
+     *  @tparam T Input type that contains a message.
      *  @param ts A list of `T` items to batch delete. Must be 10 or less items. For automatic grouping use `toFlow` instead.
      *  @param ec ExecutionContext
      *  @return BatchResult containing AWS DeleteMessageBatchResult and results divided into successful and failed.
      */
-    def batched[T: ContainsMessage : Keyed[?, Key], Key : Show](ts: List[T])(implicit ec: ExecutionContext): Future[BatchResult[T]] = {
+    def batched[T: ContainsMessage](ts: List[T])(implicit ec: ExecutionContext): Future[BatchResult[T]] = {
       if (ts.isEmpty) {
         Future.successful(BatchResult(new DeleteMessageBatchResult(), Nil, Nil))
       } else {
-        val entries = ts.map { t =>
+        val indexedTs = ts.zipWithIndex
+        val entries = indexedTs.map { case (t, index) =>
           val message = t.getMessage
-          new DeleteMessageBatchRequestEntry().withId(t.getKey.show).withReceiptHandle(message.getReceiptHandle)
+          new DeleteMessageBatchRequestEntry().withId(index.toString).withReceiptHandle(message.getReceiptHandle)
         }
 
         val request = modifyBatchRequest { new DeleteMessageBatchRequest()
@@ -93,10 +87,10 @@ class SqsDelete(
             BatchResult(
               deleteMessageBatchResult = deleteMessageBatchResult,
               failed = DeleteMessageBatchResultLens.failed.get(deleteMessageBatchResult).map(result =>
-                ts.find(_.getKey.show == result.getId).map(FailedResult(_, result))
+                indexedTs.collect { case (t, index) if index.toString == result.getId => FailedResult(t, result) }
               ).flatten,
               successful = DeleteMessageBatchResultLens.successful.get(deleteMessageBatchResult).map(result =>
-                ts.find(_.getKey.show == result.getId).map(SuccessfulResult(_, result))
+                indexedTs.collect { case (t, index) if index.toString == result.getId => SuccessfulResult(t, result) }
               ).flatten
             )
           }
@@ -105,24 +99,20 @@ class SqsDelete(
 
     /** Deletes batches of messages
      *
-     *  @tparam T Input type that contains a message and provides a key to track deletes.
-     *            Due to the at-least-once nature of SQS it's possible to have batches with duplicate messages ids.
-     *            Providing an alternate unique id in your type can avoid this problem if desired.
-     *            Keyed and ContainsMessage for Message can be imported from com.nike.fleam.sqs.implicits._
-     *  @tparam Key Type of Key used for tracking deletes. It must provide an instance of Show.
-     *              For Messages use type `MessageId` with the default implicits provided to use the Amazon provided
-     *              message id.
-     *              Import cats.implicits._ to get a `Show` instance for `MessageId`.
+     *  Due to the at-least-once nature of SQS it's possible to have batches with duplicate messages.
+     *  SqsDelete will delete these duplicates without notification since the operation is idepempotent.
+     *
+     *  @tparam T Input type that contains a message.
      *  @param config options for parallelism and batchsize
      *  @param ec ExecutionContext
      *  @return Flow from T to BatchResult containing AWS DeleteMessageBatchResult and results divided into successful and failed.
      */
-    def toFlow[T: ContainsMessage : Keyed[?, Key], Key: Show](config: SqsProcessingConfiguration)(implicit ec: ExecutionContext):
+    def toFlow[T: ContainsMessage](config: SqsProcessingConfiguration)(implicit ec: ExecutionContext):
         Flow[T, BatchResult[T], akka.NotUsed] =
       Flow[T]
         .via(config.groupedWithin.toFlow)
         .map(_.toList)
-        .mapAsync(config.parallelism) { batched[T, Key] }
+        .mapAsync(config.parallelism) { batched[T] }
   }
 
   def forQueue(url: String): UrlFixedQueue = new UrlFixedQueue(url)
