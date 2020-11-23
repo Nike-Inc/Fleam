@@ -122,7 +122,7 @@ class SerializedByKeyBidi[Key, In : Keyed[?, Key], Out : Keyed[?, Key]](
   override def createLogic(inheritedAttributes: Attributes): GraphStageLogic = new TimerGraphStageLogic(shape) {
     var complete = false
 
-    override def preStart: Unit = {
+    override def preStart(): Unit = {
       setKeepGoing(true)
       scheduleAtFixedRate(None, expirationInterval, expirationInterval)
     }
@@ -153,7 +153,7 @@ class SerializedByKeyBidi[Key, In : Keyed[?, Key], Out : Keyed[?, Key]](
         complete = true
         // This can come after the stage has no more elements to process if the queue is empty
         // making this our only chance to complete
-        if (buffer.isEmpty) {
+        if (buffer.isEmpty()) {
           completeStage()
         }
       }
@@ -173,7 +173,7 @@ class SerializedByKeyBidi[Key, In : Keyed[?, Key], Out : Keyed[?, Key]](
         buffer.unlock(key)
         push(toDownstream, element)
         safePushToProcessing()
-        if (complete && buffer.isEmpty) {
+        if (complete && buffer.isEmpty()) {
           completeStage()
         }
       }

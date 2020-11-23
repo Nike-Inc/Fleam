@@ -101,7 +101,7 @@ class SqsDeleteTest extends AnyFlatSpec with Matchers with ScalaFutures with Int
   it should "let you delete a single message" in {
     val url = "http://test/queue"
 
-    val request = Promise[DeleteMessageRequest]
+    val request = Promise[DeleteMessageRequest]()
 
     val message = new Message().withMessageId("0").withReceiptHandle("30-receipt")
 

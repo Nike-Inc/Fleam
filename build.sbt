@@ -1,5 +1,5 @@
-val currentScalaVersion = "2.13.1"
-val scalaVersions = Seq("2.12.10", currentScalaVersion)
+val currentScalaVersion = "2.13.3"
+val scalaVersions = Seq("2.12.12", currentScalaVersion)
 val awsVersion = "1.11.707"
 val akkaVersion = "2.6.8"
 val catsCore = "org.typelevel" %% "cats-core" % "2.1.0"

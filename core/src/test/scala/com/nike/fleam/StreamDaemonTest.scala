@@ -23,7 +23,7 @@ class StreamDaemonTest extends AnyFlatSpec with Matchers with ScalaFutures {
   import TestTools.{ executionContext, materializer }
 
   it should "process a stream when started" in {
-    val flowProccessed = Promise[Int]
+    val flowProccessed = Promise[Int]()
 
     val daemon = new StreamDaemon("test")
 
@@ -48,7 +48,7 @@ class StreamDaemonTest extends AnyFlatSpec with Matchers with ScalaFutures {
       pipeline = Flow[Int],
       sink = Sink.fold[Int, Int](0)(_ + _))
 
-    daemon.stop().onComplete  { case _ =>  actorSystem.terminate }
+    daemon.stop().onComplete  { case _ =>  actorSystem.terminate() }
 
     whenReady(sum) { _ should not be(0) }
   }

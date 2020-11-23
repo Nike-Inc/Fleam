@@ -23,7 +23,7 @@ class MetricsLoggerTest extends AnyFlatSpec with Matchers with ScalaFutures with
   import TestTools.{ executionContext, materializer }
 
   it should "send messages to the count items and send them to the log" in {
-    val items = Promise[List[Int]]
+    val items = Promise[List[Int]]()
     var requests = List.empty[Int]
 
     val testLogger = new MetricsLogger[Int] {
@@ -45,7 +45,7 @@ class MetricsLoggerTest extends AnyFlatSpec with Matchers with ScalaFutures with
   }
 
   it should "let you filter and not lose elements from the stream" in {
-    val countsReceived = Promise[Int]
+    val countsReceived = Promise[Int]()
 
     val testLogger = new MetricsLogger[Int] {
       val client: Client = request => Future {

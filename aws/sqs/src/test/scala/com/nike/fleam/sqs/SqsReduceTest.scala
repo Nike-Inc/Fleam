@@ -43,8 +43,8 @@ class SqsReduceTest extends AnyFlatSpec with Matchers with ScalaFutures with Eit
 
   it should "reduce items into a single message and delete the originals" in {
 
-    val reEnqueued = Promise[Message]
-    val deleted = Promise[List[Message]]
+    val reEnqueued = Promise[Message]()
+    val deleted = Promise[List[Message]]()
 
     val reduce = new SqsReduce(
       config = config,
@@ -95,8 +95,8 @@ class SqsReduceTest extends AnyFlatSpec with Matchers with ScalaFutures with Eit
 
   it should "marked failed deletes as such" in {
 
-    val reEnqueued = Promise[Message]
-    val deleted = Promise[List[Message]]
+    val reEnqueued = Promise[Message]()
+    val deleted = Promise[List[Message]]()
 
     val reduce = new SqsReduce(
       config = config,
@@ -147,7 +147,7 @@ class SqsReduceTest extends AnyFlatSpec with Matchers with ScalaFutures with Eit
 
   it should "marked failed enqueues as such" in {
 
-    val reEnqueued = Promise[Message]
+    val reEnqueued = Promise[Message]()
 
     val exception = new InvalidMessageContentsException("asdf")
 

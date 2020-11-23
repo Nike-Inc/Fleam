@@ -80,7 +80,7 @@ class SqsRetryTest extends AnyFlatSpec with Matchers with ScalaFutures with Eith
     )
 
   it should "enqueue messages that are able to be retried without randomized MessageDeduplicationId when attributesModifier is not specified" in {
-    val messagesReceived = Promise[List[Message]]
+    val messagesReceived = Promise[List[Message]]()
     val sqsRetry = mockSqsRetry(
       enqueueMessages = messages => {
         messagesReceived.success(messages)
@@ -118,7 +118,7 @@ class SqsRetryTest extends AnyFlatSpec with Matchers with ScalaFutures with Eith
   }
 
   it should "enqueue messages that are able to be retried with randomized MessageDeduplicationId when attributesModifier is specified" in {
-    val messagesReceived = Promise[List[Message]]
+    val messagesReceived = Promise[List[Message]]()
     val sqsRetry = mockSqsRetry(
       enqueueMessages = messages => {
         messagesReceived.success(messages)
@@ -157,7 +157,7 @@ class SqsRetryTest extends AnyFlatSpec with Matchers with ScalaFutures with Eith
   }
 
   it should "increment the retry count" in {
-    val messagesReceived = Promise[List[Message]]
+    val messagesReceived = Promise[List[Message]]()
     val sqsRetry = mockSqsRetry(
       enqueueMessages = messages => {
         messagesReceived.success(messages)
@@ -195,7 +195,7 @@ class SqsRetryTest extends AnyFlatSpec with Matchers with ScalaFutures with Eith
   }
 
   it should "let you override the max retry count" in {
-    val messagesReceived = Promise[List[Message]]
+    val messagesReceived = Promise[List[Message]]()
 
     val maxRetries = 10
 
@@ -238,7 +238,7 @@ class SqsRetryTest extends AnyFlatSpec with Matchers with ScalaFutures with Eith
   }
 
   it should "let you override the retry count to less than the default max" in {
-    val messagesReceived = Promise[List[Message]]
+    val messagesReceived = Promise[List[Message]]()
     val sqsRetry = mockSqsRetry(
       deadLetterEnqueueMessage = messages => {
         messagesReceived.success(messages)
@@ -287,7 +287,7 @@ class SqsRetryTest extends AnyFlatSpec with Matchers with ScalaFutures with Eith
     }
   }
   it should "deadletter messages that exceed the max retries" in {
-    val messagesReceived = Promise[List[Message]]
+    val messagesReceived = Promise[List[Message]]()
     val sqsRetry = mockSqsRetry(
       deadLetterEnqueueMessage = messages => {
         messagesReceived.success(messages)
@@ -335,7 +335,7 @@ class SqsRetryTest extends AnyFlatSpec with Matchers with ScalaFutures with Eith
   }
 
   it should "deadletter messages indicate as such" in {
-    val messagesReceived = Promise[List[Message]]
+    val messagesReceived = Promise[List[Message]]()
     val sqsRetry = mockSqsRetry(
       deadLetterEnqueueMessage = messages => {
         messagesReceived.success(messages)
@@ -373,7 +373,7 @@ class SqsRetryTest extends AnyFlatSpec with Matchers with ScalaFutures with Eith
     case object Enqueued extends Status
     case object Deleted extends Status
 
-    val first = Promise[Status]
+    val first = Promise[Status]()
 
     val sqsRetry = mockSqsRetry(
       deadLetterEnqueueMessage = messages => {
@@ -410,7 +410,7 @@ class SqsRetryTest extends AnyFlatSpec with Matchers with ScalaFutures with Eith
     case object Enqueued extends Status
     case object Deleted extends Status
 
-    val first = Promise[Status]
+    val first = Promise[Status]()
 
     val sqsRetry = mockSqsRetry(
       enqueueMessages = messages => {
@@ -586,7 +586,7 @@ class SqsRetryTest extends AnyFlatSpec with Matchers with ScalaFutures with Eith
     implicit val itemRecievedTime = new RetrievedTime[Item] {
       def getRetrievedTime(item: Item) = implicitly[RetrievedTime[RetrievedMessage]].getRetrievedTime(item.retrieved)
     }
-    val messagesReceived = Promise[List[Message]]
+    val messagesReceived = Promise[List[Message]]()
     val sqsRetry = mockSqsRetry(
       enqueueMessages = messages => {
         messagesReceived.success(messages)

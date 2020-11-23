@@ -24,7 +24,7 @@ class TextLoggingTest extends AnyFlatSpec with Matchers with ScalaFutures with I
   import TestTools.{ executionContext, materializer, checkSideEffect }
 
   it should "write a LogMessage to a log function" in {
-    val logWritten = Promise[String]
+    val logWritten = Promise[String]()
     val logger: String => Unit = { message => logWritten.success(message); () }
 
     val metricLogger = TextLogging(logger)

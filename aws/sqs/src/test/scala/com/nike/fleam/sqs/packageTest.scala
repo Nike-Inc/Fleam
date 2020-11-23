@@ -9,7 +9,6 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.OptionValues
-import com.amazonaws.services.sqs.model._
 
 /** Copyright 2020-present, Nike, Inc.
  * All rights reserved.

@@ -159,7 +159,7 @@ class ValveTest extends AnyFlatSpec with Matchers with ScalaFutures with Integra
   it should "lift a value into an exception" in {
     val f: (String, String) => Future[Either[Int, String]] = (_, _) => Future.successful(Left(1))
     val exception = new Exception("asdf")
-    val failed = Promise[Exception]
+    val failed = Promise[Exception]()
     val circuitBreaker = new (Future ~> Future) {
       def apply[T](f: Future[T]): Future[T] = f.andThen {
         case Failure(ex: Exception) => failed.success(ex)

@@ -37,7 +37,7 @@ class CountersTest extends AnyFlatSpec with Matchers with ScalaFutures with Inte
         rightMessage = count => LogMessage(s"Counted $count Ints"))
     }
 
-    val messagesReceived = Promise[List[String]]
+    val messagesReceived = Promise[List[String]]()
     var messages = List.empty[String]
 
     val writeLogMessage = (message: String) => {

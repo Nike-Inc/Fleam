@@ -102,7 +102,7 @@ class SqsEnqueueTest extends AnyFlatSpec with Matchers with ScalaFutures {
   it should "let you send a single message" in {
     val url = "http://test/queue"
 
-    val requestSent = Promise[SendMessageRequest]
+    val requestSent = Promise[SendMessageRequest]()
 
     val message = new Message()
 
@@ -125,7 +125,7 @@ class SqsEnqueueTest extends AnyFlatSpec with Matchers with ScalaFutures {
   }
 
   it should "allow you to delay messages" in {
-    val batchRequest = Promise[SendMessageBatchRequest]
+    val batchRequest = Promise[SendMessageBatchRequest]()
 
     val url = "http://test/queue"
 
@@ -178,7 +178,7 @@ class SqsEnqueueTest extends AnyFlatSpec with Matchers with ScalaFutures {
         .withDelaySeconds(10)
     )
 
-    val batchRequest = Promise[SendMessageBatchRequest]
+    val batchRequest = Promise[SendMessageBatchRequest]()
 
     val batchSender: SqsEnqueue.Batch = { request: SendMessageBatchRequest =>
       batchRequest.success(request)

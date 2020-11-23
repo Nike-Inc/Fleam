@@ -60,7 +60,7 @@ class SqsDelete(
     /** Deletes batches of messages
      *
      *  Due to the at-least-once nature of SQS it's possible to have batches with duplicate messages.
-     *  SqsDelete will delete these duplicates without notification since the operation is idepempotent.
+     *  SqsDelete will delete these duplicates without notification since the operation is idempotent.
      *
      *  @tparam T Input type that contains a message.
      *  @param ts A list of `T` items to batch delete. Must be 10 or less items. For automatic grouping use `toFlow` instead.
