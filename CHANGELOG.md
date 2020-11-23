@@ -15,8 +15,12 @@ Fleam release notes
 * Changes usages of `ActorMaterializer` to `Materializer` and other smaller changes as per migration notes (https://doc.akka.io/docs/akka/current/project/migration-guide-2.5.x-2.6.x.html). 
 * Updated slf4j versions and overrides to eliminate inconsistency warnings.  
 * Changes `SqsDelete` to set the delete id to a sequential number instead of the message id. Previously duplicate messages failed. There will be no failure for duplicate messages now caused either by SQS or your own code.
+* Adds the option to process the SQS delete `BatchResult`s via a flow passed to the `SqsStreamDaemon`.
 * Changes `MissingMessageGroupId` to `MissingGroupingKey` for `SqsReduce` to make it more general.
 * Adds value class for `MessageGroupId`. Usages of SqsReduce will need to switch from `String` to `MessageGroupId`.
+* Change the default config value for SQS long polling from 0 to 20 seconds
+* Changes SerializedByKeyBidi to take a buffer instead of forcing one.
+
 
 ## Fleam 6.0.0
 * Adds the ability to recover exceptions while using a Valve to avoid having elements dropped by akka streams

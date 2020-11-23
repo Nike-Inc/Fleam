@@ -18,7 +18,7 @@ package configuration {
     delete: SqsProcessingConfiguration = Default.Sqs.deleteConfig,
     attributeNames: Set[String] = Default.Sqs.attributeNames,
     region: String,
-    waitTimeSeconds: Int = 0
+    waitTimeSeconds: Int = 20
   )
 
   case class SqsQueueConfiguration(url: String)
