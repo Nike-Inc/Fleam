@@ -32,7 +32,7 @@ package object sqs {
     f: (Request, AsyncHandler[Request, Result]) => JavaFuture[Result]): Request => Future[Result] = {
 
     request => {
-      val promise = Promise[Result]
+      val promise = Promise[Result]()
 
       f(request, new AsyncHandler[Request, Result] {
         override def onError(exception: Exception): Unit = { promise.failure(exception); () }

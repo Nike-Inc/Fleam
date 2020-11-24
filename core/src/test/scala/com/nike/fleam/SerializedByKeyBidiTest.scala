@@ -55,7 +55,7 @@ class SerializedByKeyBidiTest extends AnyFlatSpec with Matchers with ScalaFuture
     val examples = for {
       key <- 1 to keys
       item <- 1 to items
-    } yield { Example(i = item, delay = (Random.nextDouble * 10).toInt, key = key) }
+    } yield { Example(i = item, delay = (Random.nextDouble() * 10).toInt, key = key) }
 
     implicit val exampleKey = Keyed.lift[Example, Int](_.key)
     val bidi = SerializedByKeyBidi(
@@ -100,7 +100,7 @@ class SerializedByKeyBidiTest extends AnyFlatSpec with Matchers with ScalaFuture
       key <- 1 to 10
       item <- 1 to 10
     } yield {
-      Example(i = item, delay = (Random.nextDouble * 10).toInt, key = key, fail = item % 3 == 0)
+      Example(i = item, delay = (Random.nextDouble() * 10).toInt, key = key, fail = item % 3 == 0)
     }
 
     implicit val exampleKey = Keyed.lift[Example, Int](_.key)

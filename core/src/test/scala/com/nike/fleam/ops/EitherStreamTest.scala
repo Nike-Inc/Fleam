@@ -105,14 +105,14 @@ class EitherStreamTest extends AnyFlatSpec with Matchers with ScalaFutures {
 
   it should "dropLeft" in {
     val source = Source(List[Either[Int, String]](1.asLeft, "two".asRight, "three".asRight))
-      .dropLeft
+      .dropLeft()
 
     source.runWith(Sink.seq).futureValue should be (Seq("two","three"))
   }
 
   it should "dropRight" in {
     val source = Source(List[Either[Int, String]](1.asLeft, "two".asRight, "three".asRight))
-      .dropRight
+      .dropRight()
 
     source.runWith(Sink.seq).futureValue should be (Seq(1))
   }

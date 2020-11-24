@@ -28,7 +28,7 @@ class TickingGroupedWithinFlowTest extends AnyFlatSpec with Matchers with ScalaF
       Flow[Int]
         .tickingGroupedWithin(batchSize = 100, within = 100.millis)
 
-    val receivedGroup = Promise[Seq[Int]]
+    val receivedGroup = Promise[Seq[Int]]()
 
     Source.future(Future { Thread.sleep(2000); 1 })
       .via(flow)

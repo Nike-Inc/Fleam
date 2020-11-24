@@ -12,6 +12,7 @@ Fleam release notes
   existing code unless you're directly using lower level functions, in which case just remove the materializer type
   parameter.
 * Changes the Akka version to 2.6.8.
+* Updates Scala to 2.12.12 and 2.13.3
 * Changes usages of `ActorMaterializer` to `Materializer` and other smaller changes as per migration notes (https://doc.akka.io/docs/akka/current/project/migration-guide-2.5.x-2.6.x.html). 
 * Updated slf4j versions and overrides to eliminate inconsistency warnings.  
 * Changes `SqsDelete` to set the delete id to a sequential number instead of the message id. Previously duplicate messages failed. There will be no failure for duplicate messages now caused either by SQS or your own code.

@@ -28,7 +28,7 @@ class CloudWatchTest extends AnyFlatSpec with Matchers with ScalaFutures with In
   import TestTools.{ executionContext, materializer, checkSideEffect }
 
   it should "send a PutMetricDataRequest" in {
-    val putRequest = Promise[PutMetricDataRequest]
+    val putRequest = Promise[PutMetricDataRequest]()
     val send = (request: PutMetricDataRequest) => { putRequest.success(request); new PutMetricDataResult }
     val logger = CloudWatch.metricsLogger(send)
 
@@ -60,7 +60,7 @@ class CloudWatchTest extends AnyFlatSpec with Matchers with ScalaFutures with In
   }
 
   it should "include an instance dimension when requested" in {
-    val putRequest = Promise[PutMetricDataRequest]
+    val putRequest = Promise[PutMetricDataRequest]()
     val send = (request: PutMetricDataRequest) => { putRequest.success(request); new PutMetricDataResult }
     val logger = CloudWatch.metricsLogger(send)
 
@@ -102,7 +102,7 @@ class CloudWatchTest extends AnyFlatSpec with Matchers with ScalaFutures with In
   }
 
   it should "include stack name dimension when requested" in {
-    val putRequest = Promise[PutMetricDataRequest]
+    val putRequest = Promise[PutMetricDataRequest]()
     val send = (request: PutMetricDataRequest) => { putRequest.success(request); new PutMetricDataResult }
     val logger = CloudWatch.metricsLogger(send)
 

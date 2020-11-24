@@ -52,7 +52,7 @@ object SqsStreamDaemon {
     val source = SqsSource(client).forQueue(sqsConfig)
     val sink: Sink[Message, Future[akka.Done]] =
       SqsDelete(client).forQueue(sqsConfig.queue.url)
-        .toFlow[Message, MessageId](sqsConfig.delete)
+        .toFlow[Message](sqsConfig.delete)
         .via(batchDeleteResults)
         .toMat(Sink.ignore)(Keep.right)
 

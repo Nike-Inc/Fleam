@@ -27,7 +27,7 @@ object Valve extends ValveLiftedFailedValuesPoly {
 
   def exponentialBackoff(time: FiniteDuration): DelayCalculation = { (maxRetires, currentRetry) =>
     FiniteDuration(
-      length = math.pow(time.length, currentRetry).toLong,
+      length = math.pow(time.length.toDouble, currentRetry).toLong,
       unit = time.unit
     )
   }
