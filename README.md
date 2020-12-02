@@ -4,7 +4,7 @@
 
 Fleam is a library designed to help create disjunctive (Eithers) and more generally monadic streams using
 [Cats](https://github.com/typelevel/cats/tree/master/core/src/main/scala/cats) and [Akka
-Streams](https://doc.akka.io/docs/akka/2.5/stream/).
+Streams](https://doc.akka.io/docs/akka/2.6/stream/).
 
 In the disjunctive case this means that as data flows through the stream if it becomes a `Left` it will no longer be
 processed by the disjunctive stages and will pass through continuing further down stream.
@@ -12,7 +12,7 @@ processed by the disjunctive stages and will pass through continuing further dow
 ## Getting Started
 Add a dependency in your `build.sbt`.
 ```
-val fleamVersion = "5.0.0"
+val fleamVersion = "7.0.0"
 ...
 libraryDependencies ++= Seq(
   "com.nike.fleam" %% "fleam" % fleamVersion,

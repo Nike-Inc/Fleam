@@ -2,6 +2,7 @@ Fleam release notes
 -------------------
 
 ## Fleam 7.0.0
+* Updates to AWS Java SDK 2.
 * Changes the materializer for SqsSource to a UniqueKillSwitch to allow the source to be stopped without items in the
   buffer.
 * Changes StreamDaemon to keep all of the materializers used by the different segments of the pipeline. When `stop` is
@@ -28,6 +29,8 @@ Fleam release notes
 * Change the default config value for SQS long polling from 0 to 20 seconds
 * Changes SerializedByKeyBidi to take a buffer instead of forcing one.
 * Updates Scala to 2.12.12 and 2.13.3
+* Changes the Akka version to 2.6.10.
+* Updates cats to 2.2.0
 * Updated slf4j versions and overrides to eliminate inconsistency warnings.  
 
 ## Fleam 6.0.0

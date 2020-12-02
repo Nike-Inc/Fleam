@@ -1,8 +1,8 @@
 val currentScalaVersion = "2.13.3"
 val scalaVersions = Seq("2.12.12", currentScalaVersion)
 val awsVersion = "2.15.29"
-val akkaVersion = "2.6.8"
-val catsCore = "org.typelevel" %% "cats-core" % "2.1.0"
+val akkaVersion = "2.6.10"
+val catsCore = "org.typelevel" %% "cats-core" % "2.2.0"
 
 val checkEvictionsTask = taskKey[Unit]("Task that fails build if there are evictions")
 
@@ -10,7 +10,8 @@ lazy val depOverrides = Seq(
   "org.slf4j" % "slf4j-api" % "1.7.30",
   "org.slf4j" % "jcl-over-slf4j" % "1.7.30",
   "io.netty" % "netty-codec-http" % "4.1.53.Final",
-  "io.netty" % "netty-handler" % "4.1.53.Final"
+  "io.netty" % "netty-handler" % "4.1.53.Final",
+  catsCore
 )
 
 lazy val commonSettings = Seq(
