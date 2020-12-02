@@ -1,7 +1,7 @@
 package com.nike.fleam.sqs
 package instances
 
-import com.amazonaws.services.sqs.model.Message
+import software.amazon.awssdk.services.sqs.model.Message
 import ContainsRetrievedMessage.ops._
 import ContainsMessage.ops._
 

@@ -4,9 +4,9 @@ package sqs
 import akka.stream.{Materializer, FlowShape, Graph, UniqueKillSwitch}
 import akka.stream.scaladsl._
 import configuration.SqsQueueProcessingConfiguration
-import com.amazonaws.regions.Regions
-import com.amazonaws.services.sqs.{AmazonSQSAsync, AmazonSQSAsyncClientBuilder}
-import com.amazonaws.services.sqs.model.Message
+import software.amazon.awssdk.regions.Region
+import software.amazon.awssdk.services.sqs.SqsAsyncClient
+import software.amazon.awssdk.services.sqs.model.Message
 import instances.ContainsMessageInstances._
 
 import scala.concurrent.Future
@@ -33,7 +33,7 @@ object SqsStreamDaemon {
     name = name,
     sqsConfig = sqsConfig,
     pipeline = pipeline,
-    client = AmazonSQSAsyncClientBuilder.standard().withRegion(Regions.fromName(sqsConfig.region)).build(),
+    client = SqsAsyncClient.builder().region(Region.of(sqsConfig.region)).build(),
     batchDeleteResults
   )
 
@@ -41,7 +41,7 @@ object SqsStreamDaemon {
       name: String,
       sqsConfig: SqsQueueProcessingConfiguration,
       pipeline: Graph[FlowShape[Message, Message], Mat],
-      client: AmazonSQSAsync,
+      client: SqsAsyncClient,
       batchDeleteResults: Graph[FlowShape[BatchResult[Message], BatchResult[Message]], akka.NotUsed]
     )(implicit
       ec: ExecutionContext

@@ -16,7 +16,8 @@ package configuration {
     queue: SqsQueueConfiguration,
     source: SqsSourceConfiguration = Default.Sqs.sourceConfig,
     delete: SqsProcessingConfiguration = Default.Sqs.deleteConfig,
-    attributeNames: Set[String] = Default.Sqs.attributeNames,
+    attributeNames: Set[String] = Set("ALL"),
+    messageAttributeNames: Set[String] = Set(Default.Sqs.MessageAttributes.All),
     region: String,
     waitTimeSeconds: Int = 20
   )
@@ -41,11 +42,9 @@ package configuration {
   object Default {
     object Sqs {
       // https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_ReceiveMessage.html
-      object Attributes {
+      object MessageAttributes {
         val All = "All"
       }
-
-      val attributeNames = Set(Attributes.All)
 
       val sourceConfig = SqsSourceConfiguration(
         batchSize = 10,

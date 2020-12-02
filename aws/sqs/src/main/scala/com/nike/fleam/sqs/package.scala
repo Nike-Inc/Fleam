@@ -1,11 +1,7 @@
 package com.nike.fleam
 
 import java.time.Instant
-import java.util.concurrent.{Future => JavaFuture}
-import com.amazonaws.AmazonWebServiceRequest
-import com.amazonaws.handlers.AsyncHandler
-import com.amazonaws.services.sqs.model.Message
-import scala.concurrent.{Future, Promise}
+import software.amazon.awssdk.services.sqs.model.Message
 
 /** Copyright 2020-present, Nike, Inc.
  * All rights reserved.
@@ -24,22 +20,8 @@ package sqs {
   case class MessageGroupId(value: String) extends AnyVal
 }
 
-package object sqs {
+package object sqs extends FutureWrapper {
 
   type OpError = Either[EntryError, SqsEnqueueError]
 
-  def wrapRequest[Request <: AmazonWebServiceRequest, Result](
-    f: (Request, AsyncHandler[Request, Result]) => JavaFuture[Result]): Request => Future[Result] = {
-
-    request => {
-      val promise = Promise[Result]()
-
-      f(request, new AsyncHandler[Request, Result] {
-        override def onError(exception: Exception): Unit = { promise.failure(exception); () }
-        override def onSuccess(request: Request, result: Result) =
-        { promise.success(result); () }
-      })
-      promise.future
-    }
-  }
 }

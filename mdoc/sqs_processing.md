@@ -55,10 +55,10 @@ downstream.
  We'll need our configuration and an Amazon SQS client.
 ```scala mdoc:silent
 import com.nike.fleam.sqs.SqsSource
-import com.amazonaws.regions.Regions
-import com.amazonaws.services.sqs.{AmazonSQSAsync, AmazonSQSAsyncClientBuilder}
+import software.amazon.awssdk.regions.Region
+import software.amazon.awssdk.services.sqs.SqsAsyncClient
 
-val sqsClient: AmazonSQSAsync = AmazonSQSAsyncClientBuilder.standard().withRegion(Regions.fromName(sqsConfig.region)).build()
+val sqsClient = SqsAsyncClient.builder().region(Region.of(sqsConfig.region)).build()
 
 val source = SqsSource(sqsClient).forQueue(sqsConfig)
 ```
@@ -67,11 +67,11 @@ Now that we have our source we can start to create our pipeline. Let's imagine o
 message Id for now. Our source will feed us a stream of Amazon SQS Messages.
 ```scala mdoc:silent
 import akka.stream.scaladsl._
-import com.amazonaws.services.sqs.model.Message
+import software.amazon.awssdk.services.sqs.model.Message
 
 val pipeline1 =
   Flow[Message].map { message =>
-    println(message.getMessageId)
+    println(message.messageId)
     message
   }
 ```
@@ -89,7 +89,7 @@ Now we can add our `sqsDelete` to our pipeline.
 ```scala mdoc:silent
 val pipeline2 =
   Flow[Message].map { message =>
-    println(message.getMessageId)
+    println(message.messageId)
     message
   }.via(sqsDelete)
 ```
@@ -111,9 +111,10 @@ the purposes of this doc.
 ```scala mdoc:silent
 import java.sql.Timestamp
 import scala.jdk.CollectionConverters._
+import software.amazon.awssdk.services.sqs.model.MessageSystemAttributeName
 
 val getTime: Message => Timestamp = { message =>
-  val epoch = message.getAttributes.asScala("SentTimestamp").toLong
+  val epoch = message.attributes.asScala(MessageSystemAttributeName.SENT_TIMESTAMP).toLong
   new Timestamp(epoch)
 }
 ```
@@ -144,7 +145,7 @@ thing in our function now? No, we can let the pipeline worry about that later. L
 This way it can be re-used and only has to worry about it's own purpose.
 ```scala mdoc:silent
 def logMessage(message: Message): Message = {
-  println(message.getBody)
+  println(message.body)
   message
 }
 ```

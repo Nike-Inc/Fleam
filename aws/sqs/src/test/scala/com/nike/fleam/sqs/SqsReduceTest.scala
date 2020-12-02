@@ -7,7 +7,7 @@ import com.nike.fleam.configuration._
 import org.scalatest.concurrent.ScalaFutures
 import scala.concurrent.{Future, Promise}
 import scala.concurrent.duration._
-import com.amazonaws.services.sqs.model._
+import software.amazon.awssdk.services.sqs.model._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.EitherValues
@@ -32,7 +32,7 @@ class SqsReduceTest extends AnyFlatSpec with Matchers with ScalaFutures with Eit
 
   val config = SqsReduceConfiguration(
     queue = new SqsQueueConfiguration(url = "http://testurl"),
-    grouping = new  GroupedWithinConfiguration(batchSize = 10, within = 1.seconds),
+    grouping = new GroupedWithinConfiguration(batchSize = 10, within = 1.seconds),
     deleteParallelism = 1)
 
   implicit val messageSemigroup = new Semigroup[Message] {
@@ -51,29 +51,32 @@ class SqsReduceTest extends AnyFlatSpec with Matchers with ScalaFutures with Eit
       reEnqueueMessages = { message =>
         reEnqueued.success(message)
 
-        val result = new SendMessageResult()
-          .withMessageId(message.getMessageId)
+        val result = SendMessageResponse.builder()
+          .messageId(message.messageId)
+          .build()
 
         Future.successful(result)
       },
       deleteMessages = { messages =>
         deleted.success(messages)
         val results = messages.map { message =>
-          message -> new DeleteMessageBatchResultEntry()
-            .withId(message.getMessageId)
+          message -> DeleteMessageBatchResultEntry.builder()
+            .id(message.messageId)
+            .build()
         }.toMap
 
         Future.successful(BatchResult(
-          deleteMessageBatchResult = new DeleteMessageBatchResult().withSuccessful(results.values.toList.asJava),
+          deleteMessageBatchResponse = DeleteMessageBatchResponse.builder().successful(results.values.toList.asJava).build(),
           failed = Nil,
           successful = results.map { case (message, entry) => SuccessfulResult(message, entry) }.toList
         ))
       })
 
       val messages = for { i <- 1 to 10 } yield {
-        new Message()
-          .withMessageId(i.toString)
-          .withAttributes(Map("MessageGroupId" -> "test").asJava)
+        Message.builder()
+          .messageId(i.toString)
+          .attributes(Map(MessageSystemAttributeName.MESSAGE_GROUP_ID-> "test").asJava)
+          .build()
       }
 
       val output = Source(messages)
@@ -81,14 +84,15 @@ class SqsReduceTest extends AnyFlatSpec with Matchers with ScalaFutures with Eit
         .runWith(Sink.seq)
 
       reEnqueued.future.futureValue shouldBe {
-        new Message()
-          .withMessageId("1")
-          .withAttributes(Map("MessageGroupId" -> "test").asJava)
+        Message.builder()
+          .messageId("1")
+          .attributes(Map(MessageSystemAttributeName.MESSAGE_GROUP_ID -> "test").asJava)
+          .build()
       }
       deleted.future.futureValue should contain theSameElementsAs messages
       output.futureValue should contain theSameElementsAs {
         messages.map { message =>
-          Reduced(message, batchOf = 10, new SendMessageResult().withMessageId("1")).asLeft
+          Reduced(message, batchOf = 10, SendMessageResponse.builder().messageId("1").build()).asLeft
         }
       }
   }
@@ -103,29 +107,32 @@ class SqsReduceTest extends AnyFlatSpec with Matchers with ScalaFutures with Eit
       reEnqueueMessages = { message =>
         reEnqueued.success(message)
 
-        val result = new SendMessageResult()
-          .withMessageId(message.getMessageId)
+        val result = SendMessageResponse.builder()
+          .messageId(message.messageId)
+          .build()
 
         Future.successful(result)
       },
       deleteMessages = { messages =>
         deleted.success(messages)
         val results = messages.map { message =>
-          message -> new BatchResultErrorEntry()
-            .withId(message.getMessageId)
+          message -> BatchResultErrorEntry.builder()
+            .id(message.messageId)
+            .build()
         }.toMap
 
         Future.successful(BatchResult(
-          deleteMessageBatchResult = new DeleteMessageBatchResult().withFailed(results.values.toList.asJava),
+          deleteMessageBatchResponse = DeleteMessageBatchResponse.builder().failed(results.values.toList.asJava).build(),
           failed = results.map { case (message, entry) => FailedResult(message, entry) }.toList,
           successful = Nil
         ))
       })
 
     val messages = for { i <- 1 to 10 } yield {
-      new Message()
-        .withMessageId(i.toString)
-        .withAttributes(Map("MessageGroupId" -> "test").asJava)
+      Message.builder()
+        .messageId(i.toString)
+        .attributes(Map(MessageSystemAttributeName.MESSAGE_GROUP_ID -> "test").asJava)
+        .build()
     }
 
     val output = Source(messages)
@@ -133,14 +140,15 @@ class SqsReduceTest extends AnyFlatSpec with Matchers with ScalaFutures with Eit
       .runWith(Sink.seq)
 
     reEnqueued.future.futureValue shouldBe {
-      new Message()
-        .withMessageId("1")
-        .withAttributes(Map("MessageGroupId" -> "test").asJava)
+      Message.builder()
+        .messageId("1")
+        .attributes(Map(MessageSystemAttributeName.MESSAGE_GROUP_ID -> "test").asJava)
+        .build()
     }
     deleted.future.futureValue should contain theSameElementsAs messages
     output.futureValue should contain theSameElementsAs {
       messages.map { message =>
-        FailedDelete(FailedResult(message, new BatchResultErrorEntry().withId(message.getMessageId)), message).asLeft
+        FailedDelete(FailedResult(message, BatchResultErrorEntry.builder().id(message.messageId).build()), message).asLeft
       }
     }
   }
@@ -149,7 +157,7 @@ class SqsReduceTest extends AnyFlatSpec with Matchers with ScalaFutures with Eit
 
     val reEnqueued = Promise[Message]()
 
-    val exception = new InvalidMessageContentsException("asdf")
+    val exception = InvalidMessageContentsException.builder.message("asdf").build().asInstanceOf[SqsException]
 
     val reduce = new SqsReduce(
       config = config,
@@ -161,9 +169,10 @@ class SqsReduceTest extends AnyFlatSpec with Matchers with ScalaFutures with Eit
     )
 
     val messages = for { i <- 1 to 10 } yield {
-      new Message()
-        .withMessageId(i.toString)
-        .withAttributes(Map("MessageGroupId" -> "test").asJava)
+      Message.builder()
+        .messageId(i.toString)
+        .attributes(Map(MessageSystemAttributeName.MESSAGE_GROUP_ID -> "test").asJava)
+        .build()
     }
 
     val output = Source(messages)
@@ -171,14 +180,16 @@ class SqsReduceTest extends AnyFlatSpec with Matchers with ScalaFutures with Eit
       .runWith(Sink.seq)
 
     reEnqueued.future.futureValue shouldBe {
-      new Message()
-        .withMessageId("1")
-        .withAttributes(Map("MessageGroupId" -> "test").asJava)
+      Message.builder()
+        .messageId("1")
+        .attributes(Map(MessageSystemAttributeName.MESSAGE_GROUP_ID -> "test").asJava)
+        .build()
     }
     output.futureValue should contain theSameElementsAs {
-      val combinedMessge = new Message()
-        .withMessageId("1")
-        .withAttributes(Map("MessageGroupId" -> "test").asJava)
+      val combinedMessge = Message.builder()
+        .messageId("1")
+        .attributes(Map(MessageSystemAttributeName.MESSAGE_GROUP_ID -> "test").asJava)
+        .build()
 
       messages.map { message =>
         EnqueueError(exception, message, combinedMessge).asLeft

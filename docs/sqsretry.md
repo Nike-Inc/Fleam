@@ -22,12 +22,12 @@ should ideally match on something more type-safe.
 
 ```scala
 import com.nike.fleam.sqs.SqsRetry
-import com.amazonaws.services.sqs.model._
+import software.amazon.awssdk.services.sqs.model._
 
 val retryPolicy: PartialFunction[Either[String, Int], Map[String, MessageAttributeValue]] = {
   case Left("We tried, we failed.") => SqsRetry.emptyAttributes
   case Left("That user wasn't found.") =>
-     Map("user service" -> new MessageAttributeValue().withStringValue("We couldn't find that user on this go."))
+     Map("user service" -> MessageAttributeValue.builder().stringValue("We couldn't find that user on this go.").build())
 }
 ```
 
@@ -43,7 +43,7 @@ be sent to the DL queue.
 ```scala
 val deadLetterPolicy: PartialFunction[Either[String, Int], Map[String, MessageAttributeValue]] = {
   case Left("abort, abort!") =>
-    Map("abort" -> new MessageAttributeValue().withStringValue("No one can save us now!"))
+    Map("abort" -> MessageAttributeValue.builder().stringValue("No one can save us now!").build())
 }
 ```
 
@@ -72,7 +72,7 @@ When we create our SqsRetry flow it will require that this be implicitly in scop
 time-stamp your message that will produce a `RetrievedMessage` which is just the `Message` and an `Instant`.
 
 ```scala
-import com.amazonaws.services.sqs.model.Message
+import software.amazon.awssdk.services.sqs.model.Message
 import com.nike.fleam.sqs._
 import com.nike.fleam.sqs.implicits._
 import akka.stream.scaladsl.Flow
@@ -106,7 +106,7 @@ function that will hide your retried message in SQS for a certain amount of time
 seconds, but you can easily specify an amount to wait or if you need to get more complicated about it.
 
 ```scala
-import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry
+import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry
 import scala.util.Random
 
 val alwaysWait30Seconds: SendMessageBatchRequestEntry => Int = _ => 30
@@ -160,14 +160,14 @@ val retryConfig = config.as[SqsRetryConfiguration]("retry")
 Now that we have most of the pieces let's put it together. First we'll create an `SqsRetry`.
 
 ```scala
-import com.amazonaws.services.sqs.AmazonSQSAsyncClientBuilder
-import com.amazonaws.regions.Regions
+import software.amazon.awssdk.services.sqs.SqsAsyncClient
+import software.amazon.awssdk.services.sqs.model._
+import software.amazon.awssdk.regions.Region
 import scala.concurrent.ExecutionContext.Implicits.global
 
-val sqsClient = { AmazonSQSAsyncClientBuilder
-  .standard
-  .withRegion(Regions.fromName("us-west-2"))
-  .build
+val sqsClient = { SqsAsyncClient.builder()
+  .region(Region.of("us-west-2"))
+  .build()
 }
 
 val sqsRetry = SqsRetry(sqsClient, retryConfig, waitSomeSeconds)
@@ -177,7 +177,7 @@ Now we can create our retry flow for our `Item` class.
 
 ```scala
 val retryPolicy: PartialFunction[Item, Map[String, MessageAttributeValue]] = {
-  case item if item.foo == "Failed!" => Map("foo" -> new MessageAttributeValue().withStringValue("Failed to foo!"))
+  case item if item.foo == "Failed!" => Map("foo" -> MessageAttributeValue.builder().stringValue("Failed to foo!").build())
 }
 
 val retryFlow: Flow[Item, Either[SqsRetryError[Item], Item], akka.NotUsed] = sqsRetry.flow(retryPolicy)

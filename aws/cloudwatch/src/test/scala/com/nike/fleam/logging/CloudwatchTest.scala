@@ -1,18 +1,18 @@
-package com.nike.fleam
-package logging
+package com.nike.fleam.cloudwatch
 
-import configuration._
+import com.nike.fleam.configuration._
+import com.nike.fleam.logging.{Counter, Counters}
 import akka.stream.scaladsl._
 
 import scala.concurrent.Promise
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
-import com.amazonaws.services.cloudwatch.model._
+import software.amazon.awssdk.services.cloudwatch.model._
 
+import scala.concurrent.Future
 import scala.concurrent.duration._
 import java.time.Instant
-import java.util.Date
 
 /** Copyright 2020-present, Nike, Inc.
  * All rights reserved.
@@ -25,11 +25,14 @@ class CloudWatchTest extends AnyFlatSpec with Matchers with ScalaFutures with In
 
   behavior of "CloudWatch"
 
-  import TestTools.{ executionContext, materializer, checkSideEffect }
+  import com.nike.fleam.TestTools.{ executionContext, materializer, checkSideEffect }
 
   it should "send a PutMetricDataRequest" in {
     val putRequest = Promise[PutMetricDataRequest]()
-    val send = (request: PutMetricDataRequest) => { putRequest.success(request); new PutMetricDataResult }
+    val send = (request: PutMetricDataRequest) => {
+      putRequest.success(request)
+      Future.successful(PutMetricDataResponse.builder.build())
+    }
     val logger = CloudWatch.metricsLogger(send)
 
     val now = Instant.now
@@ -47,21 +50,26 @@ class CloudWatchTest extends AnyFlatSpec with Matchers with ScalaFutures with In
       .via(logger.logCount)
       .runWith(Sink.ignore)
 
-    val expected = new PutMetricDataRequest()
-      .withNamespace("Test")
-      .withMetricData(new MetricDatum()
-        .withMetricName("ItemsProcessed")
-        .withUnit(StandardUnit.Count)
-        .withValue(10)
-        .withTimestamp(new Date(now.toEpochMilli))
+    val expected = PutMetricDataRequest.builder()
+      .namespace("Test")
+      .metricData(MetricDatum.builder()
+        .metricName("ItemsProcessed")
+        .unit(StandardUnit.COUNT)
+        .value(10)
+        .timestamp(now)
+        .build()
       )
+      .build()
 
     whenReady(checkSideEffect(graph, putRequest)) { _ shouldBe expected }
   }
 
   it should "include an instance dimension when requested" in {
     val putRequest = Promise[PutMetricDataRequest]()
-    val send = (request: PutMetricDataRequest) => { putRequest.success(request); new PutMetricDataResult }
+    val send = (request: PutMetricDataRequest) => {
+      putRequest.success(request)
+      Future.successful(PutMetricDataResponse.builder.build())
+    }
     val logger = CloudWatch.metricsLogger(send)
 
     val now = Instant.now
@@ -76,34 +84,41 @@ class CloudWatchTest extends AnyFlatSpec with Matchers with ScalaFutures with In
         ))
     }
 
-    val bareMetric = new MetricDatum()
-      .withMetricName("ItemsProcessed")
-      .withUnit(StandardUnit.Count)
-      .withValue(10)
-      .withTimestamp(new Date(now.toEpochMilli))
+    val bareMetric = MetricDatum.builder()
+      .metricName("ItemsProcessed")
+      .unit(StandardUnit.COUNT)
+      .value(10)
+      .timestamp(now)
+      .build()
 
-    val instanceMetric = new MetricDatum()
-      .withMetricName("ItemsProcessed")
-      .withDimensions(new Dimension()
-        .withName("InstanceId")
-        .withValue("i-1234567"))
-      .withUnit(StandardUnit.Count)
-      .withValue(10)
-      .withTimestamp(new Date(now.toEpochMilli))
+    val instanceMetric = MetricDatum.builder()
+      .metricName("ItemsProcessed")
+      .dimensions(Dimension.builder()
+        .name("InstanceId")
+        .value("i-1234567")
+        .build())
+      .unit(StandardUnit.COUNT)
+      .value(10)
+      .timestamp(now)
+      .build()
 
     val graph = Source(1 to 10)
       .via(logger.logCount)
       .runWith(Sink.ignore)
 
     whenReady(checkSideEffect(graph, putRequest)) { request =>
-      request.getMetricData should contain (bareMetric)
-      request.getMetricData should contain (instanceMetric)
+      request.metricData should contain (bareMetric)
+      request.metricData should contain (instanceMetric)
     }
   }
 
   it should "include stack name dimension when requested" in {
     val putRequest = Promise[PutMetricDataRequest]()
-    val send = (request: PutMetricDataRequest) => { putRequest.success(request); new PutMetricDataResult }
+    val send = (request: PutMetricDataRequest) => {
+      putRequest.success(request)
+      Future.successful(PutMetricDataResponse.builder.build())
+    }
+
     val logger = CloudWatch.metricsLogger(send)
 
     val now = Instant.now
@@ -118,28 +133,31 @@ class CloudWatchTest extends AnyFlatSpec with Matchers with ScalaFutures with In
         ))
     }
 
-    val bareMetric = new MetricDatum()
-      .withMetricName("ItemsProcessed")
-      .withUnit(StandardUnit.Count)
-      .withValue(10)
-      .withTimestamp(new Date(now.toEpochMilli))
+    val bareMetric = MetricDatum.builder()
+      .metricName("ItemsProcessed")
+      .unit(StandardUnit.COUNT)
+      .value(10)
+      .timestamp(now)
+      .build()
 
-    val stackMetric = new MetricDatum()
-      .withMetricName("ItemsProcessed")
-      .withDimensions(new Dimension()
-        .withName("StackName")
-        .withValue("MotivationalStack"))
-      .withUnit(StandardUnit.Count)
-      .withValue(10)
-      .withTimestamp(new Date(now.toEpochMilli))
+    val stackMetric = MetricDatum.builder()
+      .metricName("ItemsProcessed")
+      .dimensions(Dimension.builder()
+        .name("StackName")
+        .value("MotivationalStack")
+        .build())
+      .unit(StandardUnit.COUNT)
+      .value(10)
+      .timestamp(now)
+      .build()
 
     val graph = Source(1 to 10)
       .via(logger.logCount)
       .runWith(Sink.ignore)
 
     whenReady(checkSideEffect(graph, putRequest)) { request =>
-      request.getMetricData should contain (bareMetric)
-      request.getMetricData should contain (stackMetric)
+      request.metricData should contain (bareMetric)
+      request.metricData should contain (stackMetric)
     }
   }
 }

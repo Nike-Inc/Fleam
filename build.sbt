@@ -1,6 +1,6 @@
 val currentScalaVersion = "2.13.3"
 val scalaVersions = Seq("2.12.12", currentScalaVersion)
-val awsVersion = "1.11.707"
+val awsVersion = "2.15.29"
 val akkaVersion = "2.6.8"
 val catsCore = "org.typelevel" %% "cats-core" % "2.1.0"
 
@@ -8,7 +8,9 @@ val checkEvictionsTask = taskKey[Unit]("Task that fails build if there are evict
 
 lazy val depOverrides = Seq(
   "org.slf4j" % "slf4j-api" % "1.7.30",
-  "org.slf4j" % "jcl-over-slf4j" % "1.7.30"
+  "org.slf4j" % "jcl-over-slf4j" % "1.7.30",
+  "io.netty" % "netty-codec-http" % "4.1.53.Final",
+  "io.netty" % "netty-handler" % "4.1.53.Final"
 )
 
 lazy val commonSettings = Seq(
@@ -22,7 +24,14 @@ lazy val commonSettings = Seq(
   }),
   libraryDependencies ++= (CrossVersion.partialVersion(scalaVersion.value) match {
     case Some((2, minor)) if minor >= 13 => Nil
-    case _ => Seq(compilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full))
+    case _ => Seq(
+        compilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full),
+        "org.scala-lang.modules" % "scala-java8-compat_2.12" % "0.9.1")
+  }),
+  dependencyOverrides ++= (CrossVersion.partialVersion(scalaVersion.value) match {
+    case Some((2, minor)) if minor >= 13 => Seq(
+        "org.scala-lang.modules" %% "scala-collection-compat" % "2.2.0")
+    case _ => Nil
   }),
   libraryDependencies ++= Seq(
     "ch.qos.logback" % "logback-classic" % "1.2.3",
@@ -112,8 +121,8 @@ lazy val sqs = (project in file("./aws/sqs"))
     name := "fleam-aws-sqs",
     description := "Fleam SQS is a library of classes to aid in processing AWS SQS messages in a functional manner",
     bintrayPackageLabels ++= Seq("sqs", "aws"),
-    libraryDependencies += "com.amazonaws" % "aws-java-sdk-sqs" % awsVersion exclude("commons-logging", "commons-logging"),
-    libraryDependencies += "com.nike.fawcett" %% s"fawcett-sqs-v1" % "0.3.0")
+    libraryDependencies += "software.amazon.awssdk" % "sqs" % awsVersion exclude("commons-logging", "commons-logging"),
+    libraryDependencies += "com.nike.fawcett" %% s"fawcett-sqs-v2" % "0.4.0")
 
 lazy val cloudwatch = (project in file("./aws/cloudwatch"))
   .dependsOn(core)
@@ -126,7 +135,7 @@ lazy val cloudwatch = (project in file("./aws/cloudwatch"))
     name := "fleam-aws-cloudwatch",
     description := "Provides a class to create a flow which logs a count to Cloudwatch as part of the stream",
     bintrayPackageLabels ++= Seq("cloudwatch", "aws"),
-    libraryDependencies += "com.amazonaws" % "aws-java-sdk-cloudwatch" % awsVersion exclude("commons-logging", "commons-logging"))
+    libraryDependencies += "software.amazon.awssdk" % "cloudwatch" % awsVersion exclude("commons-logging", "commons-logging"))
 
 lazy val docs = (project in file("./mdoc"))
   .dependsOn(core, sqs, cloudwatch)

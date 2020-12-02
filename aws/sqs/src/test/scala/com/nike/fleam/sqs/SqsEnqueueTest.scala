@@ -1,7 +1,7 @@
 package com.nike.fleam
 package sqs
 
-import com.amazonaws.services.sqs.model._
+import software.amazon.awssdk.services.sqs.model._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -26,7 +26,7 @@ class SqsEnqueueTest extends AnyFlatSpec with Matchers with ScalaFutures {
 
   implicit val MessageEntryToMessage = new ToMessage[MessageEntry] {
     def toMessage(entry: MessageEntry) =
-      new Message().withMessageId(entry.id).withBody(entry.body)
+      Message.builder().messageId(entry.id).body(entry.body).build()
   }
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(timeout = 10.seconds, interval = 10.millis)
@@ -38,18 +38,21 @@ class SqsEnqueueTest extends AnyFlatSpec with Matchers with ScalaFutures {
     val url = "http://test/queue"
 
     val entries = List(
-      new SendMessageBatchResultEntry().withMessageId("foo"),
-      new SendMessageBatchResultEntry().withMessageId("bar")
+      SendMessageBatchResultEntry.builder().messageId("foo").build(),
+      SendMessageBatchResultEntry.builder().messageId("bar").build()
     )
 
-    val response = new SendMessageBatchResult()
-      .withSuccessful(entries: _*)
+    val response = SendMessageBatchResponse.builder()
+      .successful(entries: _*)
+      .build()
 
     val batchSender: SqsEnqueue.Batch = (request: SendMessageBatchRequest) => {
-      val expected = new SendMessageBatchRequest()
-        .withQueueUrl(url)
-        .withEntries(new SendMessageBatchRequestEntry().withId("foo").withMessageBody("foo-body"))
-        .withEntries(new SendMessageBatchRequestEntry().withId("bar").withMessageBody("bar-body"))
+      val expected = SendMessageBatchRequest.builder()
+        .queueUrl(url)
+        .entries(
+          SendMessageBatchRequestEntry.builder().id("foo").messageBody("foo-body").build(),
+          SendMessageBatchRequestEntry.builder().id("bar").messageBody("bar-body").build())
+        .build()
       request shouldBe expected
       Future.successful(response)
     }
@@ -96,7 +99,7 @@ class SqsEnqueueTest extends AnyFlatSpec with Matchers with ScalaFutures {
 
     val result = enqueuer.forQueue(url).batched(messageEntries)
 
-    whenReady(result) { _ shouldBe Right(new SendMessageBatchResult()) }
+    whenReady(result) { _ shouldBe Right(SendMessageBatchResponse.builder.build()) }
   }
 
   it should "let you send a single message" in {
@@ -104,11 +107,11 @@ class SqsEnqueueTest extends AnyFlatSpec with Matchers with ScalaFutures {
 
     val requestSent = Promise[SendMessageRequest]()
 
-    val message = new Message()
+    val message = Message.builder().build()
 
-    val sendMessage: SendMessageRequest => Future[SendMessageResult] = { request =>
+    val sendMessage: SendMessageRequest => Future[SendMessageResponse] = { request =>
       requestSent.success(request)
-      Future.successful(new SendMessageResult())
+      Future.successful(SendMessageResponse.builder().build())
     }
 
     val enqueuer = new SqsEnqueue(
@@ -119,8 +122,9 @@ class SqsEnqueueTest extends AnyFlatSpec with Matchers with ScalaFutures {
     enqueuer.forQueue(url).single(message)
 
     requestSent.future.futureValue shouldBe {
-      new SendMessageRequest()
-        .withQueueUrl(url)
+      SendMessageRequest.builder()
+        .queueUrl(url)
+        .build()
     }
   }
 
@@ -131,7 +135,7 @@ class SqsEnqueueTest extends AnyFlatSpec with Matchers with ScalaFutures {
 
     val batchSender: SqsEnqueue.Batch = { request: SendMessageBatchRequest =>
       batchRequest.success(request)
-      Future.successful(new SendMessageBatchResult())
+      Future.successful(SendMessageBatchResponse.builder.build())
     }
 
     val messageEntries = List(
@@ -147,10 +151,10 @@ class SqsEnqueueTest extends AnyFlatSpec with Matchers with ScalaFutures {
     val result = enqueuer.forQueue(url).batched(messageEntries)
 
     whenReady(checkSideEffect(result, batchRequest)) { request: SendMessageBatchRequest =>
-      val entries = request.getEntries.asScala
+      val entries = request.entries.asScala
       entries.length should be(2)
-      entries(0).getDelaySeconds should be(10)
-      entries(1).getDelaySeconds should be(10)
+      entries(0).delaySeconds should be(10)
+      entries(1).delaySeconds should be(10)
     }
   }
 
@@ -158,31 +162,34 @@ class SqsEnqueueTest extends AnyFlatSpec with Matchers with ScalaFutures {
 
     val url = "http://test/queue"
 
-    val attributes = Map("retryCount" -> new MessageAttributeValue().withDataType("Number").withStringValue("0")).asJava
+    val attributes = Map("retryCount" -> MessageAttributeValue.builder().dataType("Number").stringValue("0").build()).asJava
 
     val messages = List(
-      new Message().withMessageId("foo").withBody("foo-body").withMessageAttributes(attributes),
-      new Message().withMessageId("bar").withBody("bar-body").withMessageAttributes(attributes)
+      Message.builder().messageId("foo").body("foo-body").messageAttributes(attributes).build(),
+      Message.builder().messageId("bar").body("bar-body").messageAttributes(attributes).build()
     )
 
     val entries = List(
-      new SendMessageBatchRequestEntry()
-        .withId("foo")
-        .withMessageBody("foo-body")
-        .withMessageAttributes(attributes).withDelaySeconds(10),
+      SendMessageBatchRequestEntry.builder()
+        .id("foo")
+        .messageBody("foo-body")
+        .messageAttributes(attributes)
+        .delaySeconds(10)
+        .build(),
 
-      new SendMessageBatchRequestEntry()
-        .withId("bar")
-        .withMessageBody("bar-body")
-        .withMessageAttributes(attributes)
-        .withDelaySeconds(10)
+      SendMessageBatchRequestEntry.builder()
+        .id("bar")
+        .messageBody("bar-body")
+        .messageAttributes(attributes)
+        .delaySeconds(10)
+        .build()
     )
 
     val batchRequest = Promise[SendMessageBatchRequest]()
 
     val batchSender: SqsEnqueue.Batch = { request: SendMessageBatchRequest =>
       batchRequest.success(request)
-      Future.successful(new SendMessageBatchResult())
+      Future.successful(SendMessageBatchResponse.builder().build())
     }
 
     val enqueuer = new SqsEnqueue(
@@ -193,9 +200,10 @@ class SqsEnqueueTest extends AnyFlatSpec with Matchers with ScalaFutures {
     enqueuer.forQueue(url).batched(messages)
 
     batchRequest.future.futureValue shouldBe {
-      new SendMessageBatchRequest()
-        .withEntries(entries.asJava)
-        .withQueueUrl(url)
+      SendMessageBatchRequest.builder()
+        .entries(entries.asJava)
+        .queueUrl(url)
+        .build()
     }
   }
 
@@ -203,27 +211,31 @@ class SqsEnqueueTest extends AnyFlatSpec with Matchers with ScalaFutures {
 
     val url = "http://test/queue"
 
-    val attributes = Map("retryCount" -> new MessageAttributeValue().withDataType("Number").withStringValue("0")).asJava
+    val attributes = Map("retryCount" -> MessageAttributeValue.builder().dataType("Number").stringValue("0").build()).asJava
 
-    val request = new SendMessageBatchRequest()
-      .withEntries(List(
-        new SendMessageBatchRequestEntry()
-          .withId("foo")
-          .withMessageBody("foo-body")
-          .withMessageAttributes(attributes).withDelaySeconds(10),
+    val request = SendMessageBatchRequest.builder()
+      .entries(List(
+        SendMessageBatchRequestEntry.builder()
+          .id("foo")
+          .messageBody("foo-body")
+          .messageAttributes(attributes)
+          .delaySeconds(10)
+          .build(),
 
-        new SendMessageBatchRequestEntry()
-          .withId("bar")
-          .withMessageBody("bar-body")
-          .withMessageAttributes(attributes)
-          .withDelaySeconds(10)
+        SendMessageBatchRequestEntry.builder()
+          .id("bar")
+          .messageBody("bar-body")
+          .messageAttributes(attributes)
+          .delaySeconds(10)
+          .build()
         ).asJava)
-      .withQueueUrl(url)
+      .queueUrl(url)
+      .build()
 
     val modifiedRequest = SqsEnqueue.BatchModifications.randomizeMessageDedupeIds(request)
 
-    val deduplicationIds: List[java.util.UUID] = modifiedRequest.getEntries.asScala.map { entry =>
-      java.util.UUID.fromString(entry.getMessageDeduplicationId)
+    val deduplicationIds: List[java.util.UUID] = modifiedRequest.entries.asScala.map { entry =>
+      java.util.UUID.fromString(entry.messageDeduplicationId)
     }.toList
 
     deduplicationIds should have (

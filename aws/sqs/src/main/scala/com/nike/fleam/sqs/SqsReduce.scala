@@ -7,8 +7,8 @@ import com.nike.fleam.configuration._
 import cats.{Order, Semigroup}
 import cats.data.{EitherT, NonEmptyList}
 import cats.implicits._
-import com.amazonaws.services.sqs.model._
-import com.amazonaws.services.sqs.AmazonSQSAsync
+import software.amazon.awssdk.services.sqs.model._
+import software.amazon.awssdk.services.sqs.SqsAsyncClient
 import scala.concurrent.{ExecutionContext, Future}
 import ContainsMessage.ops._
 import ToMessage.ops._
@@ -25,15 +25,15 @@ import instances.ContainsMessageInstances._
  **/
 
 sealed trait SqsReduceError[Item]
-case class Reduced[Item](item: Item, batchOf: Int, enqueueResult: SendMessageResult) extends SqsReduceError[Item]
-case class EnqueueError[Item](error: AmazonSQSException, item: Item, reducedMessage: Message) extends SqsReduceError[Item]
+case class Reduced[Item](item: Item, batchOf: Int, enqueueResponse: SendMessageResponse) extends SqsReduceError[Item]
+case class EnqueueError[Item](error: SqsException, item: Item, reducedMessage: Message) extends SqsReduceError[Item]
 case class FailedDelete[Item](batchResult: FailedResult[Message], item: Item) extends SqsReduceError[Item]
 case class MissingKey[Item](error: MessageError, item: Item) extends SqsReduceError[Item]
 
 object SqsReduce {
   def apply(
     config: SqsReduceConfiguration,
-    client: AmazonSQSAsync)(implicit ec: ExecutionContext): SqsReduce =
+    client: SqsAsyncClient)(implicit ec: ExecutionContext): SqsReduce =
   new SqsReduce(
     config = config,
     reEnqueueMessages = message =>
@@ -50,7 +50,7 @@ object SqsReduce {
  */
 class SqsReduce(
     config: SqsReduceConfiguration,
-    reEnqueueMessages: Message => Future[SendMessageResult],
+    reEnqueueMessages: Message => Future[SendMessageResponse],
     deleteMessages: List[Message] => Future[BatchResult[Message]]
   )(implicit ec: ExecutionContext) {
 
@@ -98,15 +98,15 @@ class SqsReduce(
             enqueueResult <- EitherT {
               reEnqueueMessages(reducedMessage)
                 .map(_.asRight[NonEmptyList[SqsReduceError[Item]]])
-                .recover[Either[NonEmptyList[SqsReduceError[Item]], SendMessageResult]] {
-                  case ex: AmazonSQSException => items.map(EnqueueError(ex, _, reducedMessage)).asLeft[SendMessageResult]
+                .recover[Either[NonEmptyList[SqsReduceError[Item]], SendMessageResponse]] {
+                  case ex: SqsException => items.map(EnqueueError(ex, _, reducedMessage)).asLeft[SendMessageResponse]
                 }
             }
             batchResult <- EitherT.right[NonEmptyList[SqsReduceError[Item]]](deleteMessages(items.map(_.getMessage).toList))
           } yield {
             val count = items.length
             items.map[SqsReduceError[Item]] { item =>
-              batchResult.failed.find(_.entry.getId == item.getMessage.getMessageId)
+              batchResult.failed.find(_.entry.id == item.getMessage.messageId)
                 .map(FailedDelete(_, item))
                 .getOrElse(Reduced(item, count, enqueueResult))
             }

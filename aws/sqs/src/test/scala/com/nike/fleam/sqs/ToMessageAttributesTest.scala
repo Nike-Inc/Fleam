@@ -1,6 +1,6 @@
 package com.nike.fleam.sqs
 
-import com.amazonaws.services.sqs.model._
+import software.amazon.awssdk.services.sqs.model._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.OptionValues
@@ -20,7 +20,7 @@ class ToMessageAttributesTest extends AnyFlatSpec with Matchers with ScalaFuture
   it should "turn a pair of strings into a Message Attribute Value Map" in {
     ("uh-oh's" -> "We uh-oh'd").toMessageAttributes shouldBe {
       Map(
-        "uh-oh's" -> new MessageAttributeValue().withDataType("String").withStringValue("We uh-oh'd")
+        "uh-oh's" -> MessageAttributeValue.builder().dataType("String").stringValue("We uh-oh'd").build()
       )
     }
   }
@@ -28,7 +28,7 @@ class ToMessageAttributesTest extends AnyFlatSpec with Matchers with ScalaFuture
   it should "turn a pair of (string, int) into a Message Attribute Value Map" in {
     ("uh-oh's" -> 1).toMessageAttributes shouldBe {
       Map(
-        "uh-oh's" -> new MessageAttributeValue().withDataType("Number").withStringValue("1")
+        "uh-oh's" -> MessageAttributeValue.builder().dataType("Number").stringValue("1").build()
       )
     }
   }
@@ -36,7 +36,7 @@ class ToMessageAttributesTest extends AnyFlatSpec with Matchers with ScalaFuture
   it should "turn a pair of (string, double) into a Message Attribute Value Map" in {
     ("uh-oh's" -> 1.2).toMessageAttributes shouldBe {
       Map(
-        "uh-oh's" -> new MessageAttributeValue().withDataType("Number").withStringValue("1.2")
+        "uh-oh's" -> MessageAttributeValue.builder().dataType("Number").stringValue("1.2").build()
       )
     }
   }
@@ -44,7 +44,7 @@ class ToMessageAttributesTest extends AnyFlatSpec with Matchers with ScalaFuture
   it should "turn a pair of (string, long) into a Message Attribute Value Map" in {
     ("uh-oh's" -> 100000000L).toMessageAttributes shouldBe {
       Map(
-        "uh-oh's" -> new MessageAttributeValue().withDataType("Number").withStringValue("100000000")
+        "uh-oh's" -> MessageAttributeValue.builder().dataType("Number").stringValue("100000000").build()
       )
     }
   }
@@ -55,8 +55,8 @@ class ToMessageAttributesTest extends AnyFlatSpec with Matchers with ScalaFuture
       "error 2" -> "reason 2"
     ).toMessageAttributes shouldBe {
       Map(
-        "error 1" -> new MessageAttributeValue().withDataType("String").withStringValue("reason 1"),
-        "error 2" -> new MessageAttributeValue().withDataType("String").withStringValue("reason 2")
+        "error 1" -> MessageAttributeValue.builder().dataType("String").stringValue("reason 1").build(),
+        "error 2" -> MessageAttributeValue.builder().dataType("String").stringValue("reason 2").build()
       )
     }
   }

@@ -2,8 +2,8 @@ package com.nike.fleam
 package sqs
 
 import akka.stream.scaladsl.Flow
-import com.amazonaws.services.sqs.AmazonSQSAsync
-import com.amazonaws.services.sqs.model._
+import software.amazon.awssdk.services.sqs.SqsAsyncClient
+import software.amazon.awssdk.services.sqs.model._
 import com.nike.fleam.sqs.configuration.{Default, SqsProcessingConfiguration}
 import com.nike.fawcett.sqs._
 import monocle.function.all._
@@ -20,8 +20,8 @@ sealed trait SqsEnqueueError
 case class TooManyMessagesInBatch(size: Int) extends SqsEnqueueError
 
 object SqsEnqueue {
-  type Batch = SendMessageBatchRequest => Future[SendMessageBatchResult]
-  type Single = SendMessageRequest => Future[SendMessageResult]
+  type Batch = SendMessageBatchRequest => Future[SendMessageBatchResponse]
+  type Single = SendMessageRequest => Future[SendMessageResponse]
 
   def delayMessagesBySeconds(f: SendMessageBatchRequestEntry => Int): SendMessageBatchRequest => SendMessageBatchRequest =
     SendMessageBatchRequestLens.entries composeTraversal each modify { entry: SendMessageBatchRequestEntry =>
@@ -35,12 +35,12 @@ object SqsEnqueue {
   }
 
   def apply(
-    client: AmazonSQSAsync,
+    client: SqsAsyncClient,
     modifyRequest: SendMessageRequest => SendMessageRequest = identity,
     modifyBatchRequest: SendMessageBatchRequest => SendMessageBatchRequest = identity) = {
     new SqsEnqueue(
-      enqueueMessageBatch = wrapRequest(client.sendMessageBatchAsync),
-      enqueueMessage = wrapRequest(client.sendMessageAsync),
+      enqueueMessageBatch = wrapRequest(client.sendMessageBatch),
+      enqueueMessage = wrapRequest(client.sendMessage),
       modifyRequest = modifyRequest,
       modifyBatchRequest = modifyBatchRequest)
   }
@@ -55,21 +55,21 @@ class SqsEnqueue(
   import ToMessage.ops._
 
   class UrlFixedQueue(url: String) {
-    def batched[T: ToMessage](ts: List[T])(implicit ec: ExecutionContext): Future[Either[SqsEnqueueError, SendMessageBatchResult]] =
+    def batched[T: ToMessage](ts: List[T])(implicit ec: ExecutionContext): Future[Either[SqsEnqueueError, SendMessageBatchResponse]] =
     ts.size match {
       case size if size > 10 => Future.successful(Left(TooManyMessagesInBatch(size)))
-      case size if size == 0 => Future.successful(Right(new SendMessageBatchResult()))
+      case size if size == 0 => Future.successful(Right(SendMessageBatchResponse.builder.build()))
       case _ => {
         val request = prepareBatchRequest(url, ts)
         enqueueMessageBatch(request).map(Right(_))
       }
     }
-    def single[T: ToMessage](t: T): Future[SendMessageResult] = {
+    def single[T: ToMessage](t: T): Future[SendMessageResponse] = {
       val request = prepareRequest(url, t)
       enqueueMessage(request)
     }
     def asFlow[T: ToMessage](sqsProcessing: SqsProcessingConfiguration = Default.Sqs.enqueueConfig)
-      (implicit ec: ExecutionContext): Flow[T, (List[T], SendMessageBatchResult), akka.NotUsed] =
+      (implicit ec: ExecutionContext): Flow[T, (List[T], SendMessageBatchResponse), akka.NotUsed] =
       Flow[T]
         .via(sqsProcessing.groupedWithin.toFlow)
         .mapAsync(sqsProcessing.parallelism) { ts =>
@@ -80,31 +80,53 @@ class SqsEnqueue(
   def prepareRequest[T: ToMessage](url: String, t: T): SendMessageRequest = {
     val message = t.toMessage
     val attributes = MessageLens.attributes.get(message)
-    modifyRequest { new SendMessageRequest {
-      setQueueUrl(url)
-      setMessageBody(message.getBody)
-      setMessageAttributes(message.getMessageAttributes)
-      attributes.get(Attributes.MessageDeduplicationId).foreach(setMessageDeduplicationId)
-      attributes.get(Attributes.MessageGroupId).foreach(setMessageGroupId)
-    }}
+
+    import com.nike.fawcett.sqs.SendMessageRequestLens.{messageDeduplicationId, messageGroupId}
+
+    val setMessageDeduplicationId =
+      attributes.get(MessageSystemAttributeName.MESSAGE_DEDUPLICATION_ID)
+        .fold[SendMessageRequest => SendMessageRequest](identity)(messageDeduplicationId.set)
+
+    val setMessageGrougeId =
+      attributes.get(MessageSystemAttributeName.MESSAGE_GROUP_ID)
+        .fold[SendMessageRequest => SendMessageRequest](identity)(messageGroupId.set)
+
+    (setMessageDeduplicationId andThen setMessageGrougeId andThen modifyRequest) {
+      SendMessageRequest.builder()
+          .queueUrl(url)
+          .messageBody(message.body)
+          .messageAttributes(message.messageAttributes)
+          .build()
+    }
   }
 
   private def prepareBatchRequest[T: ToMessage](url: String, ts: Seq[T]): SendMessageBatchRequest = {
+    import com.nike.fawcett.sqs.SendMessageBatchRequestEntryLens.{messageDeduplicationId, messageGroupId}
     val entries = ts
       .map { t =>
         val message = t.toMessage
         val attributes = MessageLens.attributes.get(message)
-        new SendMessageBatchRequestEntry {
-          setId(message.getMessageId)
-          setMessageBody(message.getBody)
-          setMessageAttributes(message.getMessageAttributes)
-          attributes.get(Attributes.MessageDeduplicationId).foreach(setMessageDeduplicationId)
-          attributes.get(Attributes.MessageGroupId).foreach(setMessageGroupId)
+        val setMessageDeduplicationId =
+          attributes.get(MessageSystemAttributeName.MESSAGE_DEDUPLICATION_ID)
+            .fold[SendMessageBatchRequestEntry => SendMessageBatchRequestEntry](identity)(messageDeduplicationId.set)
+
+        val setMessageGrougeId =
+          attributes.get(MessageSystemAttributeName.MESSAGE_GROUP_ID)
+            .fold[SendMessageBatchRequestEntry => SendMessageBatchRequestEntry](identity)(messageGroupId.set)
+
+        (setMessageDeduplicationId andThen setMessageGrougeId) {
+          SendMessageBatchRequestEntry.builder()
+            .id(message.messageId)
+            .messageBody(message.body)
+            .messageAttributes(message.messageAttributes)
+            .build()
         }
       }
-    val request = new SendMessageBatchRequest()
-      .withQueueUrl(url)
-      .withEntries(entries: _*)
+
+    val request = SendMessageBatchRequest.builder()
+      .queueUrl(url)
+      .entries(entries: _*)
+      .build()
 
     modifyBatchRequest(request)
   }

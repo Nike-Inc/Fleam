@@ -4,7 +4,7 @@ package sqs
 import java.time.Instant
 
 import akka.stream.scaladsl._
-import com.amazonaws.services.sqs.model._
+import software.amazon.awssdk.services.sqs.model._
 import configuration._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
@@ -13,6 +13,7 @@ import org.scalatest.EitherValues
 import cats.implicits._
 import implicits._
 import com.nike.fawcett.sqs._
+import monocle.syntax.all._
 import scala.jdk.CollectionConverters._
 import scala.concurrent.duration._
 import scala.concurrent.{Future, Promise}
@@ -51,21 +52,22 @@ class SqsRetryTest extends AnyFlatSpec with Matchers with ScalaFutures with Eith
 
   val currentTime = Instant.ofEpochMilli(1495226445751L)
 
-  def newMessage() = new Message()
+  def newMessage() = Message.builder().build()
 
   def mockSqsRetry(
-      enqueueMessages: List[Message] => Future[Either[SqsEnqueueError, SendMessageBatchResult]] =
-        messages => Future.successful(Right(new SendMessageBatchResult())),
+      enqueueMessages: List[Message] => Future[Either[SqsEnqueueError, SendMessageBatchResponse]] =
+        messages => Future.successful(Right(SendMessageBatchResponse.builder().build())),
       deleteMessages: List[Message] => Future[BatchResult[Message]] =
         messages => Future.successful(BatchResult(
-          deleteMessageBatchResult = new DeleteMessageBatchResult().withSuccessful(
-            messages.map(m => new DeleteMessageBatchResultEntry().withId(m.getMessageId)):_*),
+          deleteMessageBatchResponse = DeleteMessageBatchResponse.builder()
+            .successful(messages.map(m => DeleteMessageBatchResultEntry.builder().id(m.messageId).build()):_*)
+            .build(),
           failed = Nil,
           successful = messages
-            .map(m => SuccessfulResult(m, new DeleteMessageBatchResultEntry().withId(m.getMessageId)))
+            .map(m => SuccessfulResult(m, DeleteMessageBatchResultEntry.builder().id(m.messageId).build()))
           )),
-      deadLetterEnqueueMessage: List[Message] => Future[Either[SqsEnqueueError, SendMessageBatchResult]] =
-        messages => Future.successful(Right(new SendMessageBatchResult())),
+      deadLetterEnqueueMessage: List[Message] => Future[Either[SqsEnqueueError, SendMessageBatchResponse]] =
+        messages => Future.successful(Right(SendMessageBatchResponse.builder.build())),
       maxRetries: Int = 10,
       now: () => Instant = () => currentTime
     ) = new SqsRetry(
@@ -84,14 +86,16 @@ class SqsRetryTest extends AnyFlatSpec with Matchers with ScalaFutures with Eith
     val sqsRetry = mockSqsRetry(
       enqueueMessages = messages => {
         messagesReceived.success(messages)
-        Future.successful(Right(new SendMessageBatchResult()))
+        Future.successful(Right(SendMessageBatchResponse.builder().build()))
       }
     )
 
     val previousDedupId = "foo"
 
     val retrieved = RetrievedMessage(
-      newMessage().withAttributes(Map("MessageDeduplicationId" -> previousDedupId).asJava),
+      newMessage().toBuilder
+        .attributes(Map(MessageSystemAttributeName.MESSAGE_DEDUPLICATION_ID -> previousDedupId).asJava)
+        .build(),
       Instant.now)
 
     val flow = sqsRetry.flow[Either[Examples, Examples]](
@@ -109,11 +113,11 @@ class SqsRetryTest extends AnyFlatSpec with Matchers with ScalaFutures with Eith
     whenReady(checkSideEffect(pipeline, messagesReceived)) { messages =>
       messages.length should be(1)
       val message = messages.head
-      message.getMessageAttributes.asScala shouldBe Map(
-        "uh-oh's" -> new MessageAttributeValue().withDataType("String").withStringValue("We uh-oh'd"),
-        "retryCount" -> new MessageAttributeValue().withDataType("String").withStringValue("1").withDataType("Number")
+      message.messageAttributes.asScala shouldBe Map(
+        "uh-oh's" -> MessageAttributeValue.builder().dataType("String").stringValue("We uh-oh'd").build(),
+        "retryCount" -> MessageAttributeValue.builder().dataType("Number").stringValue("1").build()
       )
-      message.getAttributes.asScala(Attributes.MessageDeduplicationId) shouldBe previousDedupId
+      message.attributes.asScala(MessageSystemAttributeName.MESSAGE_DEDUPLICATION_ID) shouldBe previousDedupId
     }
   }
 
@@ -122,14 +126,16 @@ class SqsRetryTest extends AnyFlatSpec with Matchers with ScalaFutures with Eith
     val sqsRetry = mockSqsRetry(
       enqueueMessages = messages => {
         messagesReceived.success(messages)
-        Future.successful(Right(new SendMessageBatchResult()))
+        Future.successful(Right(SendMessageBatchResponse.builder.build()))
       }
     )
 
     val previousDedupId = "foo"
 
     val retrieved = RetrievedMessage(
-      newMessage().withAttributes(Map("MessageDeduplicationId" -> previousDedupId).asJava),
+      newMessage().toBuilder()
+        .attributes(Map(MessageSystemAttributeName.MESSAGE_DEDUPLICATION_ID -> previousDedupId).asJava)
+        .build(),
       Instant.now)
 
     val flow = sqsRetry.flow[Either[Examples, Examples]](
@@ -148,11 +154,11 @@ class SqsRetryTest extends AnyFlatSpec with Matchers with ScalaFutures with Eith
     whenReady(checkSideEffect(pipeline, messagesReceived)) { messages =>
       messages.length should be(1)
       val message = messages.head
-      message.getMessageAttributes.asScala shouldBe Map(
-        "uh-oh's" -> new MessageAttributeValue().withDataType("String").withStringValue("We uh-oh'd"),
-        "retryCount" -> new MessageAttributeValue().withDataType("String").withStringValue("1").withDataType("Number")
+      message.messageAttributes.asScala shouldBe Map(
+        "uh-oh's" -> MessageAttributeValue.builder().dataType("String").stringValue("We uh-oh'd").build(),
+        "retryCount" -> MessageAttributeValue.builder().dataType("Number").stringValue("1").build()
       )
-      message.getAttributes.asScala(Attributes.MessageDeduplicationId) should not equal previousDedupId
+      message.attributes.asScala(MessageSystemAttributeName.MESSAGE_DEDUPLICATION_ID) should not equal previousDedupId
     }
   }
 
@@ -161,14 +167,14 @@ class SqsRetryTest extends AnyFlatSpec with Matchers with ScalaFutures with Eith
     val sqsRetry = mockSqsRetry(
       enqueueMessages = messages => {
         messagesReceived.success(messages)
-        Future.successful(Right(new SendMessageBatchResult()))
+        Future.successful(Right(SendMessageBatchResponse.builder().build()))
       }
     )
 
     val retrieved = RetrievedMessage(
-      message = newMessage().addMessageAttributesEntry(
-        "retryCount", new MessageAttributeValue().withStringValue("1").withDataType("Number")
-      ),
+      message = newMessage()
+        .applyLens(MessageLens.messageAttributes)
+        .modify(_ + ("retryCount" -> MessageAttributeValue.builder().stringValue("1").dataType("Number").build())),
       timestamp = Instant.now
     )
 
@@ -188,8 +194,8 @@ class SqsRetryTest extends AnyFlatSpec with Matchers with ScalaFutures with Eith
     whenReady(checkSideEffect(pipeline, messagesReceived)) { messages =>
       messages.length should be(1)
       val message = messages.head
-      message.getMessageAttributes.asScala shouldBe Map(
-        "retryCount" -> new MessageAttributeValue().withStringValue("2").withDataType("Number")
+      message.messageAttributes.asScala shouldBe Map(
+        "retryCount" -> MessageAttributeValue.builder().stringValue("2").dataType("Number").build()
       )
     }
   }
@@ -202,15 +208,14 @@ class SqsRetryTest extends AnyFlatSpec with Matchers with ScalaFutures with Eith
     val sqsRetry = mockSqsRetry(
       enqueueMessages = messages => {
         messagesReceived.success(messages)
-        Future.successful(Right(new SendMessageBatchResult()))
+        Future.successful(Right(SendMessageBatchResponse.builder.build()))
       },
       maxRetries = maxRetries
     )
 
     val retrieved = RetrievedMessage(
-      message = newMessage().addMessageAttributesEntry(
-        "retryCount", new MessageAttributeValue().withStringValue("11").withDataType("Number")
-      ),
+      message = newMessage().applyLens(MessageLens.messageAttributes)
+        .modify(_ + ("retryCount" -> MessageAttributeValue.builder().stringValue("11").dataType("Number").build())),
       timestamp = Instant.now
     )
 
@@ -231,8 +236,8 @@ class SqsRetryTest extends AnyFlatSpec with Matchers with ScalaFutures with Eith
     whenReady(checkSideEffect(pipeline, messagesReceived)) { messages =>
       messages.length should be(1)
       val message = messages.head
-      message.getMessageAttributes.asScala shouldBe Map(
-        "retryCount" -> new MessageAttributeValue().withStringValue("12").withDataType("Number")
+      message.messageAttributes.asScala shouldBe Map(
+        "retryCount" -> MessageAttributeValue.builder().stringValue("12").dataType("Number").build()
       )
     }
   }
@@ -242,18 +247,19 @@ class SqsRetryTest extends AnyFlatSpec with Matchers with ScalaFutures with Eith
     val sqsRetry = mockSqsRetry(
       deadLetterEnqueueMessage = messages => {
         messagesReceived.success(messages)
-        Future.successful(Right(new SendMessageBatchResult()
-          .withSuccessful(new SendMessageBatchResultEntry()
-            .withId("1")
-          )))
+        Future.successful(Right(SendMessageBatchResponse.builder()
+          .successful(SendMessageBatchResultEntry.builder().id("1").build())
+          .build()))
       },
       maxRetries = 10
     )
 
     val retrieved = RetrievedMessage(
-      message = newMessage().addMessageAttributesEntry(
-        "retryCount", new MessageAttributeValue().withStringValue("4").withDataType("Number")
-      ).withMessageId("1"),
+      message = newMessage().applyLens(MessageLens.messageAttributes)
+        .modify(_ + ("retryCount" -> MessageAttributeValue.builder().stringValue("4").dataType("Number").build()))
+        .toBuilder
+        .messageId("1")
+        .build(),
       timestamp = Instant.now
     )
 
@@ -273,15 +279,15 @@ class SqsRetryTest extends AnyFlatSpec with Matchers with ScalaFutures with Eith
     whenReady(messagesReceived.future) { messages =>
       messages.length should be(1)
       val message = messages.head
-      message.getMessageAttributes.asScala shouldBe Map(
-        "retryCount" -> new MessageAttributeValue().withStringValue("4").withDataType("Number")
+      message.messageAttributes.asScala shouldBe Map(
+        "retryCount" -> MessageAttributeValue.builder().stringValue("4").dataType("Number").build()
       )
-      message.getMessageId shouldBe "1"
+      message.messageId shouldBe "1"
     }
 
     whenReady(pipeline) { _ should be(Left(
       ExceededRetriesDeadLettered(
-        message = retrieved.message,
+        message = retrieved.message.applyLens(MessageLens.attributes).set(Map.empty),
         in =  Left(UhOh(retrieved)),
         maxRetries = 3)))
     }
@@ -291,17 +297,21 @@ class SqsRetryTest extends AnyFlatSpec with Matchers with ScalaFutures with Eith
     val sqsRetry = mockSqsRetry(
       deadLetterEnqueueMessage = messages => {
         messagesReceived.success(messages)
-        Future.successful(Right(new SendMessageBatchResult()
-          .withSuccessful(new SendMessageBatchResultEntry()
-            .withId("1")
-          )))
+        Future.successful(Right(SendMessageBatchResponse.builder()
+          .successful(SendMessageBatchResultEntry.builder()
+            .id("1")
+            .build()
+          ).build()))
       }
     )
 
     val retrieved = RetrievedMessage(
-      message = newMessage().addMessageAttributesEntry(
-        "retryCount", new MessageAttributeValue().withStringValue("11").withDataType("Number")
-      ).withMessageId("1"),
+      message = newMessage()
+        .applyLens(MessageLens.messageAttributes)
+        .modify(_ + ("retryCount" -> MessageAttributeValue.builder().stringValue("11").dataType("Number").build()))
+        .toBuilder()
+        .messageId("1")
+        .build(),
       timestamp = Instant.now
     )
 
@@ -320,15 +330,15 @@ class SqsRetryTest extends AnyFlatSpec with Matchers with ScalaFutures with Eith
     whenReady(messagesReceived.future) { messages =>
       messages.length should be(1)
       val message = messages.head
-      message.getMessageAttributes.asScala shouldBe Map(
-        "retryCount" -> new MessageAttributeValue().withStringValue("11").withDataType("Number")
+      message.messageAttributes.asScala shouldBe Map(
+        "retryCount" -> MessageAttributeValue.builder().stringValue("11").dataType("Number").build()
       )
-      message.getMessageId shouldBe "1"
+      message.messageId shouldBe "1"
     }
 
     whenReady(pipeline) { _ should be(Left(
       ExceededRetriesDeadLettered(
-        message = retrieved.message,
+        message = retrieved.message.applyLens(MessageLens.attributes).set(Map.empty),
         in =  Left(UhOh(retrieved)),
         maxRetries = 10)))
     }
@@ -339,7 +349,7 @@ class SqsRetryTest extends AnyFlatSpec with Matchers with ScalaFutures with Eith
     val sqsRetry = mockSqsRetry(
       deadLetterEnqueueMessage = messages => {
         messagesReceived.success(messages)
-        Future.successful(Right(new SendMessageBatchResult()))
+        Future.successful(Right(SendMessageBatchResponse.builder.build()))
       }
     )
 
@@ -349,7 +359,8 @@ class SqsRetryTest extends AnyFlatSpec with Matchers with ScalaFutures with Eith
       deadLetter = { (in: Either[Examples, Examples]) =>
         in match {
           case Left(KaBoom(retrieved)) =>
-            Map("fatal-error" -> new MessageAttributeValue().withDataType("String").withStringValue("Got KaBoomed"))
+            Map("fatal-error" ->
+              MessageAttributeValue.builder().dataType("String").stringValue("Got KaBoomed").build())
         }
       },
       retry = PartialFunction.empty
@@ -362,8 +373,8 @@ class SqsRetryTest extends AnyFlatSpec with Matchers with ScalaFutures with Eith
     whenReady(checkSideEffect(pipeline, messagesReceived)) { messages =>
       messages.length should be(1)
       val message = messages.head
-      message.getMessageAttributes.asScala shouldBe Map(
-        "fatal-error" -> new MessageAttributeValue().withDataType("String").withStringValue("Got KaBoomed")
+      message.messageAttributes.asScala shouldBe Map(
+        "fatal-error" -> MessageAttributeValue.builder().dataType("String").stringValue("Got KaBoomed").build()
       )
     }
   }
@@ -378,11 +389,11 @@ class SqsRetryTest extends AnyFlatSpec with Matchers with ScalaFutures with Eith
     val sqsRetry = mockSqsRetry(
       deadLetterEnqueueMessage = messages => {
         first.tryComplete(Try(Enqueued))
-        Future.successful(Right(new SendMessageBatchResult()))
+        Future.successful(Right(SendMessageBatchResponse.builder.build()))
       },
       deleteMessages = messages => {
         first.tryComplete(Try(Deleted))
-        Future.successful(BatchResult(new DeleteMessageBatchResult(), Nil, Nil))
+        Future.successful(BatchResult(DeleteMessageBatchResponse.builder.build(), Nil, Nil))
       }
     )
 
@@ -415,11 +426,11 @@ class SqsRetryTest extends AnyFlatSpec with Matchers with ScalaFutures with Eith
     val sqsRetry = mockSqsRetry(
       enqueueMessages = messages => {
         first.tryComplete(Try(Enqueued))
-        Future.successful(Right(new SendMessageBatchResult()))
+        Future.successful(Right(SendMessageBatchResponse.builder.build()))
       },
       deleteMessages = messages => {
         first.tryComplete(Try(Deleted))
-        Future.successful(BatchResult(new DeleteMessageBatchResult(), Nil, Nil))
+        Future.successful(BatchResult(DeleteMessageBatchResponse.builder.build(), Nil, Nil))
       }
     )
 
@@ -443,25 +454,25 @@ class SqsRetryTest extends AnyFlatSpec with Matchers with ScalaFutures with Eith
 
   it should "not delete messages that failed to enqueue" in {
 
-    val failedResult = new BatchResultErrorEntry {
-      setId("1")
-      setCode("1")
-      setMessage("You failed!")
-    }
+    val failedResult = BatchResultErrorEntry.builder()
+      .id("1")
+      .code("1")
+      .message("You failed!")
+      .build()
 
     val sqsRetry = mockSqsRetry(
       enqueueMessages = messages => {
-        Future.successful(Right(new SendMessageBatchResult().withFailed(List(failedResult).asJava)))
+        Future.successful(Right(SendMessageBatchResponse.builder().failed(List(failedResult).asJava).build()))
       },
       deleteMessages = messages => {
         if (messages.isEmpty)
-          Future.successful(BatchResult(new DeleteMessageBatchResult(), Nil, Nil))
+          Future.successful(BatchResult(DeleteMessageBatchResponse.builder().build(), Nil, Nil))
         else
           Future.failed(new RuntimeException("no messages should be deleted"))
       }
     )
 
-    val message = new Message().withMessageId("1")
+    val message = Message.builder().messageId("1").build()
     val retrieved = RetrievedMessage(message, Instant.now)
 
     val flow = sqsRetry.flow[Either[Examples, Examples]](
@@ -477,37 +488,45 @@ class SqsRetryTest extends AnyFlatSpec with Matchers with ScalaFutures with Eith
       .via(flow)
       .runWith(Sink.head)
 
-      val addMessageAttributes = MessageLens.messageAttributes.modify(_ ++ Map("uh-oh's" -> "We uh-oh'd").toMessageAttributes ++ Map("retryCount" -> 1).toMessageAttributes)
-
     pipeline.futureValue should be {
+      import MessageLens._
+      val updatedMessage =
+        retrieved.message
+          .applyLens(messageAttributes).modify(
+            _ ++
+            Map("uh-oh's" -> "We uh-oh'd").toMessageAttributes ++
+            Map("retryCount" -> 1).toMessageAttributes
+          )
+          .applyLens(attributes).set(Map.empty)
+
       RetryEnqueueError(
-        addMessageAttributes(retrieved.message),
+        updatedMessage,
         Left(UhOh(retrieved)),
-        OpFailure(addMessageAttributes(message), Left(EntryError("1", "You failed!")))).asLeft
+        OpFailure(updatedMessage, Left(EntryError("1", "You failed!")))).asLeft
     }
   }
 
   it should "not delete messages that failed to dlq" in {
 
-    val failedResult = new BatchResultErrorEntry {
-      setId("1")
-      setCode("1")
-      setMessage("You failed!")
-    }
+    val failedResult = BatchResultErrorEntry.builder()
+      .id("1")
+      .code("1")
+      .message("You failed!")
+      .build()
 
     val sqsRetry = mockSqsRetry(
       deadLetterEnqueueMessage = messages => {
-        Future.successful(Right(new SendMessageBatchResult().withFailed(List(failedResult).asJava)))
+        Future.successful(Right(SendMessageBatchResponse.builder().failed(List(failedResult).asJava).build()))
       },
       deleteMessages = messages => {
         if (messages.isEmpty)
-          Future.successful(BatchResult(new DeleteMessageBatchResult(), Nil, Nil))
+          Future.successful(BatchResult(DeleteMessageBatchResponse.builder.build(), Nil, Nil))
         else
           Future.failed(new RuntimeException("no messages should be deleted"))
       }
     )
 
-    val message = new Message().withMessageId("1")
+    val message = Message.builder().messageId("1").build()
     val retrieved = RetrievedMessage(message, Instant.now)
 
     val flow = sqsRetry.flow[Either[Examples, Examples]](
@@ -523,34 +542,38 @@ class SqsRetryTest extends AnyFlatSpec with Matchers with ScalaFutures with Eith
       .via(flow)
       .runWith(Sink.head)
 
-    val addMessageAttributes = MessageLens.messageAttributes.modify(_ ++ Map("uh-oh's" -> "We uh-oh'd").toMessageAttributes)
-
     pipeline.futureValue should be {
+      import MessageLens._
+      val updatedMessage = retrieved.message
+        .applyLens(messageAttributes).modify(_ ++ Map("uh-oh's" -> "We uh-oh'd").toMessageAttributes)
+
       RetryDlqError(
-        addMessageAttributes(retrieved.message),
+        updatedMessage,
         Left(UhOh(retrieved)),
-        OpFailure(addMessageAttributes(message), Left(EntryError("1", "You failed!")))).asLeft
+        OpFailure(updatedMessage, Left(EntryError("1", "You failed!")))).asLeft
     }
   }
 
   it should "report re-enqueued deletion failures" in {
 
-    val failedResult = new BatchResultErrorEntry {
-      setId("1")
-      setCode("1")
-      setMessage("You failed!")
-    }
+    val failedResult = BatchResultErrorEntry.builder()
+      .id("1")
+      .code("1")
+      .message("You failed!")
+      .build()
 
-    val message = new Message().withMessageId("foo")
+    val message = Message.builder().messageId("foo").build()
 
     val sqsRetry = mockSqsRetry(
       enqueueMessages = messages => {
-        Future.successful(Right(new SendMessageBatchResult().withSuccessful(
-          messages.map(m => new SendMessageBatchResultEntry().withId(m.getMessageId)):_*
-        )))
+        Future.successful(Right(SendMessageBatchResponse.builder()
+          .successful(messages.map(m => SendMessageBatchResultEntry.builder().id(m.messageId).build()):_*).build()
+        ))
       },
       deleteMessages = messages => {
-          Future.successful(BatchResult(new DeleteMessageBatchResult(), List(FailedResult(message, failedResult)), Nil))
+          Future.successful(BatchResult(
+            DeleteMessageBatchResponse.builder.build(),
+            List(FailedResult(message, failedResult)), Nil))
       }
     )
 
@@ -568,13 +591,22 @@ class SqsRetryTest extends AnyFlatSpec with Matchers with ScalaFutures with Eith
       .via(flow)
       .runWith(Sink.head)
 
-    val addMessageAttributes = MessageLens.messageAttributes.modify(_ ++ Map("uh-oh's" -> "We uh-oh'd").toMessageAttributes ++ Map("retryCount" -> 1).toMessageAttributes)
 
     pipeline.futureValue should be {
+      import MessageLens._
+      val updatedMessage =
+        retrieved.message
+          .applyLens(messageAttributes).modify(
+            _ ++
+            Map("uh-oh's" -> "We uh-oh'd").toMessageAttributes ++
+            Map("retryCount" -> 1).toMessageAttributes
+          )
+          .applyLens(attributes).set(Map.empty)
+
       ReEnqueuedNotDeletedError(
-        addMessageAttributes(retrieved.message),
+        updatedMessage,
         Left(UhOh(retrieved)),
-        OpFailure(message, Left(EntryError("1", "You failed!")))).asLeft
+        OpFailure(retrieved.message, Left(EntryError("1", "You failed!")))).asLeft
     }
   }
 
@@ -590,14 +622,14 @@ class SqsRetryTest extends AnyFlatSpec with Matchers with ScalaFutures with Eith
     val sqsRetry = mockSqsRetry(
       enqueueMessages = messages => {
         messagesReceived.success(messages)
-        Future.successful(Right(new SendMessageBatchResult().withSuccessful(
-          messages.map(m => new SendMessageBatchResultEntry().withId(m.getMessageId)):_*
-        )))
+        Future.successful(Right(SendMessageBatchResponse.builder().successful(
+          messages.map(m => SendMessageBatchResultEntry.builder().id(m.messageId).build()):_*).build()
+        ))
       }
     )
 
 
-    val retrieved = (id: Int) => RetrievedMessage(newMessage().withMessageId(id.toString), Instant.now)
+    val retrieved = (id: Int) => RetrievedMessage(newMessage().toBuilder().messageId(id.toString).build(), Instant.now)
     val items = List[Either[Examples, Item]](
       Right(Item(1, retrieved(1))),
       Right(Item(2, retrieved(2))),
@@ -637,26 +669,26 @@ class SqsRetryTest extends AnyFlatSpec with Matchers with ScalaFutures with Eith
         if (messages.nonEmpty) {
           Future.failed(new Exception("Unexpected call to enqueue message"))
         } else {
-          Future.successful(Right(new SendMessageBatchResult()))
+          Future.successful(Right(SendMessageBatchResponse.builder.build()))
         }
       },
       deleteMessages = messages => {
         if (messages.nonEmpty) {
           Future.failed(new Exception("Unexpected call to delete message"))
         } else {
-          Future.successful(BatchResult(new DeleteMessageBatchResult(), Nil, Nil))
+          Future.successful(BatchResult(DeleteMessageBatchResponse.builder.build(), Nil, Nil))
         }
       },
       deadLetterEnqueueMessage = messages => {
         if (messages.nonEmpty) {
           Future.failed(new Exception("Unexpected call to dead letter"))
         } else {
-          Future.successful(Right(new SendMessageBatchResult()))
+          Future.successful(Right(SendMessageBatchResponse.builder.build()))
         }
       }
     )
 
-    val retrieved = RetrievedMessage(new Message(), currentTime.minusSeconds(30))
+    val retrieved = RetrievedMessage(Message.builder.build(), currentTime.minusSeconds(30))
 
     val flow = sqsRetry.flow[Either[Examples, Examples]](
       retry = { (in: Either[Examples, Examples]) =>
@@ -671,56 +703,62 @@ class SqsRetryTest extends AnyFlatSpec with Matchers with ScalaFutures with Eith
       .runWith(Sink.head)
 
     whenReady(pipeline) { result =>
-      result.left.value shouldBe MessageProcessingTimedOut(_: Message, _: Either[Examples, Message])
+      result.left.value shouldBe a[MessageProcessingTimedOut[_]]
     }
   }
 
   behavior of "SqsRetry Delays"
 
   it should "doubleOr to a default" in {
-    val requestEntry = new SendMessageBatchRequestEntry()
+    val requestEntry = SendMessageBatchRequestEntry.builder.build()
 
     SqsRetry.Delays.doubleOr(3, 100)(requestEntry) shouldBe 3
   }
 
   it should "doubleOr to a doubled value" in {
-    val requestEntry = new SendMessageBatchRequestEntry()
-      .withDelaySeconds(1)
+    val requestEntry = SendMessageBatchRequestEntry.builder()
+      .delaySeconds(1)
+      .build()
 
     SqsRetry.Delays.doubleOr(3, 100)(requestEntry) shouldBe 2
   }
 
   it should "doubleOr to the max when doubling would be too much" in {
-    val requestEntry = new SendMessageBatchRequestEntry()
-      .withDelaySeconds(75)
+    val requestEntry = SendMessageBatchRequestEntry.builder()
+      .delaySeconds(75)
+      .build()
 
     SqsRetry.Delays.doubleOr(3, 100)(requestEntry) shouldBe 100
   }
 
   it should "doubleOr set to default when you accidently put in a negative" in {
-    val requestEntry = new SendMessageBatchRequestEntry()
-      .withDelaySeconds(-1)
+    val requestEntry = SendMessageBatchRequestEntry.builder()
+      .delaySeconds(-1)
+      .build()
 
     SqsRetry.Delays.doubleOr(3, 100)(requestEntry) shouldBe 3
   }
 
   it should "constant to a constant value" in {
-    val requestEntry = new SendMessageBatchRequestEntry()
-      .withDelaySeconds(1)
+    val requestEntry = SendMessageBatchRequestEntry.builder()
+      .delaySeconds(1)
+      .build()
 
     SqsRetry.Delays.constant(3)(requestEntry) shouldBe 3
   }
 
   it should "increment to an incremented value" in {
-    val requestEntry = new SendMessageBatchRequestEntry()
-      .withDelaySeconds(1)
+    val requestEntry = SendMessageBatchRequestEntry.builder()
+      .delaySeconds(1)
+      .build()
 
     SqsRetry.Delays.increment(2)(requestEntry) shouldBe 3
   }
 
   it should "increment a negative value to an incremented value" in {
-    val requestEntry = new SendMessageBatchRequestEntry()
-      .withDelaySeconds(-1)
+    val requestEntry = SendMessageBatchRequestEntry.builder()
+      .delaySeconds(-1)
+      .build()
 
     SqsRetry.Delays.increment(2)(requestEntry) shouldBe 1
   }

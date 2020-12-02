@@ -4,7 +4,7 @@ package sqs
 import java.util
 
 import akka.stream.scaladsl._
-import com.amazonaws.services.sqs.model._
+import software.amazon.awssdk.services.sqs.model._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -31,67 +31,79 @@ class SqsSourceTest extends AnyFlatSpec with Matchers with ScalaFutures {
 
   it should "make a request to Sqs" in {
     val url = "http://test/queue"
-    val response = new ReceiveMessageResult()
-      .withMessages(
-        new Message().withBody("Message 1"),
-        new Message().withBody("Message 2")
+    val response = ReceiveMessageResponse.builder()
+      .messages(
+        Message.builder().body("Message 1").build(),
+        Message.builder().body("Message 2").build()
       )
+      .build()
 
     val fetcher: SqsSource.Fetch = (request: ReceiveMessageRequest) => {
-      val expected = new ReceiveMessageRequest()
-        .withQueueUrl(url)
-        .withMaxNumberOfMessages(10)
-        .withMessageAttributeNames("All")
-        .withAttributeNames("All")
-        .withWaitTimeSeconds(0)
+      val expected = ReceiveMessageRequest.builder()
+        .queueUrl(url)
+        .maxNumberOfMessages(10)
+        .messageAttributeNames("All")
+        .attributeNames(QueueAttributeName.ALL)
+        .waitTimeSeconds(0)
+        .build()
+
       request should be(expected)
       Future.successful(response)
     }
 
     val source = new SqsSource(fetcher).forQueue(url).take(2)
 
-    val result: Future[Seq[String]] = source.map(_.getBody).runWith(Sink.seq)
+    val result: Future[Seq[String]] = source.map(_.body).runWith(Sink.seq)
 
     whenReady(result) { _.toSet should contain theSameElementsAs Set("Message 1", "Message 2") }
   }
 
   it should "request attributes" in {
     val url = "http://test/queue"
-    val response = new ReceiveMessageResult()
-      .withMessages(
-        new Message().withBody("Message 1").withAttributes(Map("foo" -> "bar").asJava),
-        new Message().withBody("Message 2").withAttributes(Map("foo" -> "baz").asJava)
+    val response = ReceiveMessageResponse.builder()
+      .messages(
+        Message.builder()
+          .body("Message 1")
+          .attributes(Map(MessageSystemAttributeName.SENDER_ID -> "bar").asJava).build(),
+        Message.builder()
+          .body("Message 2")
+          .attributes(Map(MessageSystemAttributeName.SENDER_ID -> "baz").asJava).build()
       )
+      .build()
 
     val fetcher: SqsSource.Fetch = (request: ReceiveMessageRequest) => {
-      val expected = new ReceiveMessageRequest()
-        .withQueueUrl(url)
-        .withMaxNumberOfMessages(10)
-        .withAttributeNames("foo")
-        .withMessageAttributeNames("All")
-        .withWaitTimeSeconds(0)
+      val expected = ReceiveMessageRequest.builder()
+        .queueUrl(url)
+        .maxNumberOfMessages(10)
+        //TODO: This should use types once this is fixed, see https://github.com/aws/aws-sdk-java-v2/issues/1892
+        .attributeNamesWithStrings("ALL")
+        .messageAttributeNames("All")
+        .waitTimeSeconds(0)
+        .build()
+
       request should be(expected)
       Future.successful(response)
     }
 
-    val source = new SqsSource(fetcher).forQueue(url, attributeNames = Set("foo")).take(2)
+    val source = new SqsSource(fetcher).forQueue(url, attributeNames = Set("ALL")).take(2)
 
-    val result: Future[Seq[util.Map[String, String]]] = source.map(_.getAttributes).runWith(Sink.seq)
+    val result: Future[Seq[util.Map[MessageSystemAttributeName, String]]] = source.map(_.attributes).runWith(Sink.seq)
 
     val expected = Set(
-      Map("foo" -> "bar"),
-      Map("foo" -> "baz")
+      Map(MessageSystemAttributeName.SENDER_ID -> "bar"),
+      Map(MessageSystemAttributeName.SENDER_ID -> "baz")
     )
     whenReady(result) { _.map(_.asScala.toMap) should contain theSameElementsAs expected}
   }
 
   it should "be killable" in {
     val url = "http://test/queue"
-    val response = new ReceiveMessageResult()
-      .withMessages(
-        new Message().withBody("Message 1"),
-        new Message().withBody("Message 2")
+    val response = ReceiveMessageResponse.builder()
+      .messages(
+        Message.builder().body("Message 1").build(),
+        Message.builder().body("Message 2").build()
       )
+      .build()
 
     val fetcher: SqsSource.Fetch = (request: ReceiveMessageRequest) => {
       Future.successful(response)
@@ -99,7 +111,7 @@ class SqsSourceTest extends AnyFlatSpec with Matchers with ScalaFutures {
 
     val source = new SqsSource(fetcher).forQueue(url)
 
-    val (killSwitch, result) = source.map(_.getBody).toMat(Sink.seq)(Keep.both).run()
+    val (killSwitch, result) = source.map(_.body).toMat(Sink.seq)(Keep.both).run()
     killSwitch.shutdown()
     whenReady(result) { _ shouldBe a[Seq[_]] }
 

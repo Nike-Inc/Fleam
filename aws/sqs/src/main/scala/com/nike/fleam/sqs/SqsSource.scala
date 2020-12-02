@@ -5,8 +5,8 @@ import com.nike.fleam.configuration._
 import sqs.configuration._
 import akka.stream.scaladsl._
 import akka.stream.{KillSwitches, ThrottleMode, UniqueKillSwitch}
-import com.amazonaws.services.sqs.AmazonSQSAsync
-import com.amazonaws.services.sqs.model._
+import software.amazon.awssdk.services.sqs.SqsAsyncClient
+import software.amazon.awssdk.services.sqs.model._
 import com.nike.fawcett.sqs._
 import scala.concurrent.Future
 
@@ -19,11 +19,11 @@ import scala.concurrent.Future
 
 object SqsSource {
 
-  type Fetch = ReceiveMessageRequest => Future[ReceiveMessageResult]
+  type Fetch = ReceiveMessageRequest => Future[ReceiveMessageResponse]
 
-  def apply(client: AmazonSQSAsync, messageModifier: Message => Message = identity) = {
+  def apply(client: SqsAsyncClient, messageModifier: Message => Message = identity) = {
     new SqsSource(
-      fetchMessages = wrapRequest[ReceiveMessageRequest, ReceiveMessageResult](client.receiveMessageAsync),
+      fetchMessages = wrapRequest[ReceiveMessageRequest, ReceiveMessageResponse](client.receiveMessage),
       messageModifier = messageModifier
     )
   }
@@ -39,6 +39,7 @@ class SqsSource(fetchMessages: SqsSource.Fetch, messageModifier: Message => Mess
     parallelism = config.source.parallelism,
     config = config.source.throttle,
     attributeNames = config.attributeNames,
+    messageAttributeNames = config.messageAttributeNames,
     waitTimeSeconds = config.waitTimeSeconds)
 
   def forQueue(
@@ -46,15 +47,18 @@ class SqsSource(fetchMessages: SqsSource.Fetch, messageModifier: Message => Mess
       batchSize: Int = Default.Sqs.sourceConfig.batchSize,
       parallelism: Int = Default.Sqs.sourceConfig.parallelism,
       config: Option[ThrottleConfiguration] = Default.Sqs.sourceConfig.throttle,
-      attributeNames: Set[String] = Default.Sqs.attributeNames,
+      attributeNames: Set[String] = Set("All"),
+      messageAttributeNames: Set[String] = Set(Default.Sqs.MessageAttributes.All),
       waitTimeSeconds: Int = 0): Source[Message, UniqueKillSwitch] = {
 
-    val request = new ReceiveMessageRequest()
-      .withQueueUrl(url)
-      .withMaxNumberOfMessages(batchSize)
-      .withAttributeNames(attributeNames.toSeq:_*)
-      .withMessageAttributeNames(Default.Sqs.Attributes.All)
-      .withWaitTimeSeconds(waitTimeSeconds)
+    val request = ReceiveMessageRequest.builder()
+      .queueUrl(url)
+      .maxNumberOfMessages(batchSize)
+      // This should use types once this is fixed, see https://github.com/aws/aws-sdk-java-v2/issues/1892
+      .attributeNamesWithStrings(attributeNames.toList :_*)
+      .messageAttributeNames(messageAttributeNames.toList :_*)
+      .waitTimeSeconds(waitTimeSeconds)
+      .build()
 
     val throttling = config.map { c =>
       Flow[SqsSource.Fetch]
@@ -65,7 +69,7 @@ class SqsSource(fetchMessages: SqsSource.Fetch, messageModifier: Message => Mess
       .viaMat(KillSwitches.single)(Keep.right)
       .via(throttling)
       .mapAsync(parallelism)(_(request))
-      .map(ReceiveMessageResultLens.messages.get)
+      .map(ReceiveMessageResponseLens.messages.get)
       .mapConcat(identity)
       .map(messageModifier)
   }
