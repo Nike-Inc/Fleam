@@ -1,6 +1,6 @@
 package com.nike.fleam.sqs
 
-import com.amazonaws.services.sqs.model._
+import software.amazon.awssdk.services.sqs.model._
 import java.time.Instant
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -19,7 +19,7 @@ import cats.implicits._
 class ContainsRetrievedMessageTest extends AnyFlatSpec with Matchers with ScalaFutures with OptionValues {
   it should "derive a message holder and retrieved time from a ContainsRetrievedMessage" in {
     val now = Instant.now
-    val retrievedMessage = RetrievedMessage(message = new Message(), timestamp = now)
+    val retrievedMessage = RetrievedMessage(message = Message.builder().build(), timestamp = now)
     case class Example(retrieved: RetrievedMessage)
 
     implicit val containsRetrievedMessageExample: ContainsRetrievedMessage[Example] =
@@ -27,13 +27,13 @@ class ContainsRetrievedMessageTest extends AnyFlatSpec with Matchers with ScalaF
 
     val example = Example(retrievedMessage)
 
-    example.getMessage should be(new Message())
+    example.getMessage should be(Message.builder().build())
     example.getRetrievedTime should be(now)
   }
 
   it should "derive a message holder and retrieved time from a ContainsRetrievedMessage for sub-types" in {
     val now = Instant.now
-    val retrievedMessage = RetrievedMessage(message = new Message(), timestamp = now)
+    val retrievedMessage = RetrievedMessage(message = Message.builder().build(), timestamp = now)
 
     sealed trait Example
     case class ExampleFoo(retrieved: RetrievedMessage) extends Example
@@ -47,13 +47,13 @@ class ContainsRetrievedMessageTest extends AnyFlatSpec with Matchers with ScalaF
 
     val exampleFoo = ExampleFoo(retrievedMessage)
 
-    exampleFoo.getMessage should be(new Message())
+    exampleFoo.getMessage should be(Message.builder().build())
     exampleFoo.getRetrievedTime should be(now)
     exampleFoo.getRetrievedMessage should be(retrievedMessage)
 
     val exampleBar = ExampleBar(retrievedMessage)
 
-    exampleBar.getMessage should be(new Message())
+    exampleBar.getMessage should be(Message.builder().build())
     exampleBar.getRetrievedTime should be(now)
     exampleBar.getRetrievedMessage should be(retrievedMessage)
   }
@@ -65,7 +65,7 @@ class ContainsRetrievedMessageTest extends AnyFlatSpec with Matchers with ScalaF
     implicit val aContainsRetrievedMessage: ContainsRetrievedMessage[A] = ContainsRetrievedMessage.lift(_.retrieved)
     implicit val bContainsRetrievedMessage: ContainsRetrievedMessage[B] = ContainsRetrievedMessage.lift(_.retrieved)
 
-    val retrievedMessage = RetrievedMessage(message = new Message(), timestamp = Instant.now)
+    val retrievedMessage = RetrievedMessage(message = Message.builder().build(), timestamp = Instant.now)
 
     val a = A(retrievedMessage)
     val b = B(retrievedMessage)

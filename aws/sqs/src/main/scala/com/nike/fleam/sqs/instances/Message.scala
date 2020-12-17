@@ -2,7 +2,7 @@ package com.nike.fleam
 package sqs
 package instances
 
-import com.amazonaws.services.sqs.model.Message
+import software.amazon.awssdk.services.sqs.model.{Message, MessageSystemAttributeName}
 import cats.{Order, Show}
 import cats.implicits._
 import com.nike.fawcett.sqs._
@@ -21,7 +21,7 @@ case class MissingGroupingKey(message: Message) extends MessageError
 trait MessageInstances {
   implicit val messageGroupIdKeyed = Keyed.lift[Message, Either[MissingGroupingKey, MessageGroupId]] { message =>
     Either.fromOption(
-      (MessageLens.attributes composeLens at(Attributes.MessageGroupId) get(message)).map(MessageGroupId),
+      (MessageLens.attributes composeLens at(MessageSystemAttributeName.MESSAGE_GROUP_ID) get(message)).map(MessageGroupId),
       MissingGroupingKey(message))
   }
 

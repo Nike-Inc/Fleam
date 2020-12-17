@@ -23,6 +23,7 @@ So this shows us that we can count anywhere along the stream. Let's look at how 
 Creating a logger is pretty easy from here. We need to give it some function `String => Unit`. Here we're going to use
 a `Logger`'s info function.
 ```scala mdoc:silent
+import com.nike.fleam.cloudwatch._
 import com.nike.fleam.logging._
 import org.slf4j.LoggerFactory
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -73,10 +74,10 @@ val pipeline2 = new Pipeline(textLogger.logCount[Item])
 
 Okay, so how much harder is it do a `CloudWatch` logger? Let's start creating one.
 ```scala mdoc:silent
-import com.amazonaws.services.cloudwatch.{AmazonCloudWatch, AmazonCloudWatchClientBuilder}
-import com.amazonaws.regions.Regions
+import software.amazon.awssdk.services.cloudwatch.CloudWatchAsyncClient
+import software.amazon.awssdk.regions.Region
 
-val awsClient: AmazonCloudWatch = AmazonCloudWatchClientBuilder.standard().withRegion(Regions.fromName("us-west-2")).build()
+val awsClient = CloudWatchAsyncClient.builder().region(Region.of("us-west-2")).build()
 val cloudWatchLogger = CloudWatch(awsClient)
 ```
 The main difference in creating the client is we need an `AmazonCloudWatch` instead of a function `String => Unit`.
@@ -96,7 +97,7 @@ val config2 = ConfigFactory.parseString("""
 Defining the `Counter` is a little different. Instead of creating a `LogMessage` we need to create a `PutMetricDataRequest`.
 `Cloudwatch.wrap` helps us do this easily.
 ```scala mdoc:silent
-import com.amazonaws.services.cloudwatch.model.PutMetricDataRequest
+import software.amazon.awssdk.services.cloudwatch.model.PutMetricDataRequest
 
 val cloudwatchLoggingConfig = config2.as[GroupedWithinConfiguration]("cloudwatchLogger")
 

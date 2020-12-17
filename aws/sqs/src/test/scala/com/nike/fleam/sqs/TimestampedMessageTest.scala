@@ -1,7 +1,7 @@
 package com.nike.fleam
 package sqs
 
-import com.amazonaws.services.sqs.model.Message
+import software.amazon.awssdk.services.sqs.model.Message
 import akka.stream.scaladsl.{Flow, Source, Sink}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -25,7 +25,7 @@ class TimestampedMessageTest extends AnyFlatSpec with Matchers with ScalaFutures
     val now = Instant.ofEpochMilli(1599778039241L)
     val flow = Flow[Message].timestampMessage(() => now)
 
-    val message = new Message()
+    val message = Message.builder.build()
     val result =  Source.single(message).via(flow).runWith(Sink.head)
 
     result.futureValue shouldBe { RetrievedMessage(message, now) }
@@ -34,7 +34,7 @@ class TimestampedMessageTest extends AnyFlatSpec with Matchers with ScalaFutures
   it should "time stamp a message in a source" in {
     val now = Instant.ofEpochMilli(1599778039241L)
 
-    val message = new Message()
+    val message = Message.builder.build()
     val result =  Source.single(message).timestampMessage(() => now).runWith(Sink.head)
 
     result.futureValue shouldBe { RetrievedMessage(message, now) }

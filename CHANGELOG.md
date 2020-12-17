@@ -2,6 +2,7 @@ Fleam release notes
 -------------------
 
 ## Fleam 7.0.0
+* Updates to AWS Java SDK 2.
 * Changes the materializer for SqsSource to a UniqueKillSwitch to allow the source to be stopped without items in the
   buffer.
 * Changes StreamDaemon to keep all of the materializers used by the different segments of the pipeline. When `stop` is
@@ -11,17 +12,26 @@ Fleam release notes
 * `Stream` and `EitherStream` have been refactored internally to apply the materializer sooner. This shouldn't affect
   existing code unless you're directly using lower level functions, in which case just remove the materializer type
   parameter.
-* Changes the Akka version to 2.6.8.
-* Updates Scala to 2.12.12 and 2.13.3
 * Changes usages of `ActorMaterializer` to `Materializer` and other smaller changes as per migration notes (https://doc.akka.io/docs/akka/current/project/migration-guide-2.5.x-2.6.x.html). 
-* Updated slf4j versions and overrides to eliminate inconsistency warnings.  
 * Changes `SqsDelete` to set the delete id to a sequential number instead of the message id. Previously duplicate messages failed. There will be no failure for duplicate messages now caused either by SQS or your own code.
+* Moves cloudwatch related code from `com.nike.fleam.logging` into `com.nike.fleam.cloudwatch`.
 * Adds the option to process the SQS delete `BatchResult`s via a flow passed to the `SqsStreamDaemon`.
+* Removes `wrapRequest` java future wrapper from public API. Internally this is replaced by `toScala` from the Scala
+  java8 compatability library for Scala 2.12 and `asScala` from the scala jdk FutureConverters for Scala 2.13.
+* Removes sqs `Attributes` object. This is a typed enumeration of `MessageSystemAttributeName` in AWS Java SDK 2. All
+  functions are updated to use this instead of `String`.
+* Renames SQS `configuration.Default.Sqs.Attributes` to `configuration.Default.Sqs.MessageAttributes` to better reflect
+  this is meant to be used for user level "message attributes" and not sqs level "attributes".
+* Changes class value names that contained `Response` to `Result` where it changed in AWS Java SDK 2. Fleam classes that
+  ended in `Result` haven't changed.
 * Changes `MissingMessageGroupId` to `MissingGroupingKey` for `SqsReduce` to make it more general.
 * Adds value class for `MessageGroupId`. Usages of SqsReduce will need to switch from `String` to `MessageGroupId`.
 * Change the default config value for SQS long polling from 0 to 20 seconds
 * Changes SerializedByKeyBidi to take a buffer instead of forcing one.
-
+* Updates Scala to 2.12.12 and 2.13.3
+* Changes the Akka version to 2.6.10.
+* Updates cats to 2.2.0
+* Updated slf4j versions and overrides to eliminate inconsistency warnings.  
 
 ## Fleam 6.0.0
 * Adds the ability to recover exceptions while using a Valve to avoid having elements dropped by akka streams

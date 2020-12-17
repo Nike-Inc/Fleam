@@ -1,14 +1,12 @@
-package com.nike.fleam
-package logging
+package com.nike.fleam.cloudwatch
 
 import akka.stream.scaladsl.Flow
-import configuration.GroupedWithinConfiguration
-import com.amazonaws.services.cloudwatch.AmazonCloudWatch
-import com.amazonaws.services.cloudwatch.model._
-import com.amazonaws.util.EC2MetadataUtils
+import com.nike.fleam.configuration.GroupedWithinConfiguration
+import com.nike.fleam.logging.{Counter, Counters, MetricsLogger}
+import software.amazon.awssdk.services.cloudwatch.CloudWatchAsyncClient
+import software.amazon.awssdk.services.cloudwatch.model._
+import software.amazon.awssdk.regions.internal.util.EC2MetadataUtils
 import java.time.Instant
-import java.util.Date
-
 import scala.concurrent.{ExecutionContext, Future}
 
 /** Copyright 2020-present, Nike, Inc.
@@ -20,24 +18,31 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object CloudWatch {
 
-  def apply(awsClient: AmazonCloudWatch)(implicit ec: ExecutionContext): MetricsLogger[PutMetricDataRequest] =
-    metricsLogger(send = awsClient.putMetricData)
+  def apply(awsClient: CloudWatchAsyncClient)(implicit ec: ExecutionContext): MetricsLogger[PutMetricDataRequest] =
+    metricsLogger(send = wrapRequest[PutMetricDataRequest, PutMetricDataResponse](awsClient.putMetricData))
 
-  def metricsLogger(send: PutMetricDataRequest => PutMetricDataResult)(implicit ec: ExecutionContext) =
+  def metricsLogger(send: PutMetricDataRequest => Future[PutMetricDataResponse])(implicit ec: ExecutionContext) =
     new MetricsLogger[PutMetricDataRequest] {
-      val client: Client = request => Future { send(request) }
+      val client: Client = send(_).map(_ => ())
     }
 
-  type DimensionalMetric = (String, Int, Date) => MetricDatum
+  type DimensionalMetric = (String, Int, Instant) => MetricDatum
 
-  def withDimensions(dimensions: Map[String, String]): DimensionalMetric = { (metricName: String, count: Int, now: Date) =>
-    val datum = new MetricDatum().withMetricName(metricName).withValue(count).withTimestamp(now)
+  def withDimensions(dimensions: Map[String, String]): DimensionalMetric = { (metricName: String, count: Int, now: Instant) =>
+    val datum = MetricDatum.builder()
+      .metricName(metricName)
+      .value(count)
+      .timestamp(now)
+      .build()
+
     dimensions.foldLeft(datum) { case (data, (key, value)) =>
-      data
-        .withDimensions(new Dimension()
-          .withName(key)
-          .withValue(value))
-        .withUnit(StandardUnit.Count)
+      data.toBuilder()
+        .dimensions(Dimension.builder()
+          .name(key)
+          .value(value)
+          .build())
+        .unit(StandardUnit.COUNT)
+        .build()
     }
   }
 
@@ -46,13 +51,17 @@ object CloudWatch {
   def withInstanceId(instanceId: String): DimensionalMetric = withDimensions(Map("InstanceId" -> instanceId))
 
   def wrap(namespace: String, metricName: String, count: Int, now: Instant = Instant.now, dimensions: List[DimensionalMetric] = List.empty) = {
-    val time = new Date(now.toEpochMilli)
-    val datum = new MetricDatum()
-      .withMetricName(metricName)
-      .withUnit(StandardUnit.Count)
-      .withValue(count)
-      .withTimestamp(time) :: dimensions.map(_(metricName, count, time))
-    new PutMetricDataRequest().withNamespace(namespace).withMetricData(datum :_*)
+    val datum = MetricDatum.builder()
+      .metricName(metricName)
+      .unit(StandardUnit.COUNT)
+      .value(count)
+      .timestamp(now)
+      .build() :: dimensions.map(_(metricName, count, now))
+
+    PutMetricDataRequest.builder()
+      .namespace(namespace)
+      .metricData(datum :_*)
+      .build()
   }
 
   /** Logs the count of items to Cloudwatch
@@ -67,7 +76,7 @@ object CloudWatch {
    */
   def logCount[T](
     namespace: String,
-    awsClient: AmazonCloudWatch,
+    awsClient: CloudWatchAsyncClient,
     config: GroupedWithinConfiguration,
     dimensions: List[DimensionalMetric] =
       List(CloudWatch.withInstanceId(Option(EC2MetadataUtils.getInstanceId).getOrElse("missing"))),
@@ -75,7 +84,7 @@ object CloudWatch {
     now: () => Instant = () => Instant.now())(metricName: String)(implicit ec: ExecutionContext)
     : Flow[T, T, akka.NotUsed] =
     CloudWatch
-      .metricsLogger(send = awsClient.putMetricData)
+      .metricsLogger(send = wrapRequest(awsClient.putMetricData))
       .logCount(filter) { new Counter[T, PutMetricDataRequest] {
         val flow = Counters
           .countWithin[T](config)

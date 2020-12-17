@@ -1,6 +1,6 @@
 package com.nike.fleam.sqs
 
-import com.amazonaws.services.sqs.model.Message
+import software.amazon.awssdk.services.sqs.model.Message
 import simulacrum._
 import scala.language.implicitConversions
 

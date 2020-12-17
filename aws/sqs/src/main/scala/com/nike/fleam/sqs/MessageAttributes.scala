@@ -1,7 +1,7 @@
 package com.nike.fleam
 package sqs
 
-import com.amazonaws.services.sqs.model.{Message, MessageAttributeValue}
+import software.amazon.awssdk.services.sqs.model.{Message, MessageAttributeValue}
 import cats.implicits._
 import com.nike.fawcett.sqs._
 
@@ -23,16 +23,17 @@ object MessageAttributes {
 
   def count(key: String): ContainsCount[Message, Count] =
     new ContainsCount[Message, Count] {
-      private def countAttribute(count: Int): MessageAttributeValue = new MessageAttributeValue()
-        .withDataType("Number")
-        .withStringValue(count.toString)
+      private def countAttribute(count: Int): MessageAttributeValue = MessageAttributeValue.builder()
+        .dataType("Number")
+        .stringValue(count.toString)
+        .build()
 
       def getCount(message: Message): Either[MessageCountError, Int] = {
         val attribute = MessageLens.messageAttributes.get(message).getOrElse(key, countAttribute(0))
 
         for {
           string <- Either.fromOption[MessageCountError, String](
-            Option(attribute.getStringValue),
+            Option(attribute.stringValue),
             NullValueError(attribute, message)
           )
           count <- Either.catchNonFatal(string.toInt)

@@ -6,8 +6,8 @@ import java.time.Instant
 import akka.stream.scaladsl.Flow
 import cats.data._
 import cats.implicits._
-import com.amazonaws.services.sqs.AmazonSQSAsync
-import com.amazonaws.services.sqs.model._
+import software.amazon.awssdk.services.sqs.SqsAsyncClient
+import software.amazon.awssdk.services.sqs.model._
 import configuration._
 import implicits._
 import com.nike.fleam.implicits._
@@ -39,7 +39,7 @@ case class ReEnqueuedNotDeletedError[In](message: Message, in: In, error: OpFail
 case class ExceededRetriesNotDeletedError[In](message: Message, in: In, error: OpFailure) extends SqsRetryError[In]
 case class RetryDlqError[In](message: Message, in: In, error: OpFailure) extends SqsRetryError[In]
 case class DlqedNotDeletedError[In](message: Message, in: In, error: OpFailure) extends SqsRetryError[In]
-case class MessageProcessingTimedOut[In](message: Message, in: In) extends SqsRetryError[In]
+case class MessageProcessingTimedOut[In](message: Message, in: In, elapsed: Duration, timeout: Duration) extends SqsRetryError[In]
 case class NoAwsResponse[In](message: Message, in: In) extends SqsRetryError[In]
 
 object SqsRetry {
@@ -51,13 +51,13 @@ object SqsRetry {
   implicit val messageToMessage: ToMessage[Message] = ToMessage.lift(identity)
 
   def randomizeMessageDedupeId(uuid: () => java.util.UUID = () => java.util.UUID.randomUUID()):
-    Map[String, String] => Map[String, String] =
-    _ ++ Map(Attributes.MessageDeduplicationId -> uuid().toString)
+    Map[MessageSystemAttributeName, String] => Map[MessageSystemAttributeName, String] =
+    _ ++ Map(MessageSystemAttributeName.MESSAGE_DEDUPLICATION_ID -> uuid().toString)
 
   object Delays {
     // For scala 2.11, can remove this after 2.11 support is dropped and use Option instead
     private def getCurrent(requestEntry: SendMessageBatchRequestEntry): Int = {
-      val delaySeconds = requestEntry.getDelaySeconds
+      val delaySeconds = requestEntry.delaySeconds
       if (delaySeconds == null) 0 else delaySeconds
     }
 
@@ -78,7 +78,7 @@ object SqsRetry {
   }
 
   def apply(
-      client: AmazonSQSAsync,
+      client: SqsAsyncClient,
       config: SqsRetryConfiguration,
       delaySeconds: SendMessageBatchRequestEntry => Int = Delays.constant(0))(
       implicit ec: ExecutionContext) =
@@ -100,9 +100,9 @@ object SqsRetry {
 }
 
 class SqsRetry(
-    reEnqueueMessages: (List[Message], ExecutionContext) => Future[Either[SqsEnqueueError, SendMessageBatchResult]],
+    reEnqueueMessages: (List[Message], ExecutionContext) => Future[Either[SqsEnqueueError, SendMessageBatchResponse]],
     deleteMessages: List[Message] => Future[BatchResult[Message]],
-    deadLetterEnqueueMessages: (List[Message], ExecutionContext) => Future[Either[SqsEnqueueError, SendMessageBatchResult]],
+    deadLetterEnqueueMessages: (List[Message], ExecutionContext) => Future[Either[SqsEnqueueError, SendMessageBatchResponse]],
     sqsProcessing: SqsProcessingConfiguration,
     maxRetries: Int,
     timeout: Duration,
@@ -114,7 +114,7 @@ class SqsRetry(
   def flow[In: ContainsMessage : RetrievedTime](
       retry: PartialFunction[In, Map[String, MessageAttributeValue]],
       deadLetter: PartialFunction[In, Map[String, MessageAttributeValue]] = PartialFunction.empty,
-      attributesModifier: Map[String, String] => Map[String, String] = identity,
+      attributesModifier: Map[MessageSystemAttributeName, String] => Map[MessageSystemAttributeName, String] = identity,
       retryCountOverrides: PartialFunction[In, Int] = PartialFunction.empty)
       (implicit ec: ExecutionContext): Flow[In, Either[SqsRetryError[In], In], akka.NotUsed] = {
 
@@ -123,7 +123,7 @@ class SqsRetry(
     case class ReEnqueue(message: Message, in: In) extends Result
     case class DeadLetter(message: Message, in: In) extends Result
     case class ExceededRetries(message: Message, in: In) extends Result
-    case class ElapsedTimeout(message: Message, in: In) extends Result
+    case class ElapsedTimeout(message: Message, in: In, elapsed: Duration, timeout: Duration) extends Result
 
     def resolveRetryCount(in: In): Int = retryCountOverrides.applyOrElse(in, (_: In) => maxRetries)
 
@@ -153,7 +153,7 @@ class SqsRetry(
             val availableRetries = resolveRetryCount(in)
 
             if (elapsed >= timeout) {
-              ElapsedTimeout(updatedMessage, in)
+              ElapsedTimeout(updatedMessage, in, elapsed, timeout)
             } else if (count > availableRetries) {
               ExceededRetries(updatedMessage, in)
             } else {
@@ -166,22 +166,22 @@ class SqsRetry(
         .applyOrElse[In, Either[SqsRetryError[In], Result]](in, (_: In) => Right(Ok(in)))
     }
 
-    type SendBatch = (List[Message], ExecutionContext) => Future[Either[SqsEnqueueError, SendMessageBatchResult]]
+    type SendBatch = (List[Message], ExecutionContext) => Future[Either[SqsEnqueueError, SendMessageBatchResponse]]
     val sendPartitioned = (messages: List[Message], send: SendBatch) => {
-      val messageMap = messages.map(m => (m.getMessageId, m)).toMap
+      val messageMap = messages.map(m => (m.messageId, m)).toMap
       EitherT(send(messages, ec)).fold(
         enqueueError => messages.map(message => OpFailure(message, enqueueError.asRight).asLeft[Message]),
         batchResult => {
-          val successes = (SendMessageBatchResultLens.successful composeTraversal each
+          val successes = (SendMessageBatchResponseLens.successful composeTraversal each
             composeLens SendMessageBatchResultEntryLens.id)
             .getAll(batchResult)
             .flatMap(messageMap.get)
             .map(_.asRight[OpFailure])
 
-          val failures = SendMessageBatchResultLens.failed.get(batchResult)
+          val failures = SendMessageBatchResponseLens.failed.get(batchResult)
             .flatMap { failure =>
-              messageMap.get(failure.getId).map(
-                message => OpFailure(message, EntryError(failure.getCode, failure.getMessage).asLeft)
+              messageMap.get(failure.id).map(
+                message => OpFailure(message, EntryError(failure.code, failure.message).asLeft)
                   .asLeft[Message]
               )
             }
@@ -193,11 +193,11 @@ class SqsRetry(
 
     type DeleteBatch = List[Message] => Future[BatchResult[Message]]
     val deletePartitioned = (messages: List[Message], delete: DeleteBatch) => {
-      val messageMap = messages.map(m => (m.getMessageId, m)).toMap
+      val messageMap = messages.map(m => (m.messageId, m)).toMap
       delete(messages).map(batchResult => {
-        val successes = batchResult.successful.map(_.entry.getId).flatMap(messageMap.get)
+        val successes = batchResult.successful.map(_.entry.id).flatMap(messageMap.get)
         val failures = batchResult.failed.map(failure =>
-          OpFailure(failure.entity, EntryError(failure.entry.getCode, failure.entry.getMessage).asLeft).asLeft[Message]
+          OpFailure(failure.entity, EntryError(failure.entry.code, failure.entry.message).asLeft).asLeft[Message]
         )
         failures ++ successes.map(Right(_))
       })
@@ -219,8 +219,8 @@ class SqsRetry(
 
         def findMessageResult[E](results: List[Either[OpFailure, Message]])(targetMessage: Message): Option[Either[OpFailure, Message]] = {
           results.find {
-            case Left(opFailure: OpFailure) => opFailure.message.getMessageId == targetMessage.getMessageId
-            case Right(message) => message.getMessageId == targetMessage.getMessageId
+            case Left(opFailure: OpFailure) => opFailure.message.messageId == targetMessage.messageId
+            case Right(message) => message.messageId == targetMessage.messageId
           }
         }
 
@@ -274,7 +274,8 @@ class SqsRetry(
                   enqueueFailed = RetryDlqError.apply
                 )
 
-              case Right(ElapsedTimeout(message, in)) => Left(MessageProcessingTimedOut(message, in))
+              case Right(ElapsedTimeout(message, in, elapsed, timeout)) =>
+                Left(MessageProcessingTimedOut(message, in, elapsed, timeout))
               case Right(Ok(in)) => Right(in)
               case Left(error) => Left(error)
             }

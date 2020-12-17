@@ -4,7 +4,7 @@ package sqs
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.EitherValues
-import com.amazonaws.services.sqs.model.{Message, MessageAttributeValue}
+import software.amazon.awssdk.services.sqs.model.{Message, MessageAttributeValue}
 import scala.jdk.CollectionConverters._
 import ContainsCount.ops._
 
@@ -21,10 +21,11 @@ class MessageAttributesTest extends AnyFlatSpec with Matchers with EitherValues 
 
     implicit val containsCount = MessageAttributes.count("retryCount")
 
-    val message = new Message().setCount(1)
+    val message = Message.builder().build().setCount(1)
 
-    message.getMessageAttributes.asScala should contain theSameElementsAs {
-      Map("retryCount" -> new MessageAttributeValue().withDataType("Number").withStringValue("1"))
+    message.messageAttributes.asScala should contain theSameElementsAs {
+      Map("retryCount" -> MessageAttributeValue.builder().dataType("Number").stringValue("1").build())
+      Map("retryCount" -> MessageAttributeValue.builder().dataType("Number").stringValue("1").build())
     }
   }
 
@@ -32,9 +33,11 @@ class MessageAttributesTest extends AnyFlatSpec with Matchers with EitherValues 
 
     implicit val containsCount = MessageAttributes.count("retryCount")
 
-    val message = new Message().withMessageAttributes(
-      Map("retryCount" -> new MessageAttributeValue().withDataType("Number").withStringValue("1")).asJava
-    )
+    val message = Message.builder()
+      .messageAttributes(
+        Map("retryCount" -> MessageAttributeValue.builder().dataType("Number").stringValue("1").build()).asJava
+      )
+      .build()
 
     message.getCount shouldBe Right(1)
   }
@@ -43,7 +46,7 @@ class MessageAttributesTest extends AnyFlatSpec with Matchers with EitherValues 
 
     implicit val containsCount = MessageAttributes.count("retryCount")
 
-    val message = new Message()
+    val message = Message.builder.build()
 
     message.getCount shouldBe Right(0)
   }
@@ -52,9 +55,11 @@ class MessageAttributesTest extends AnyFlatSpec with Matchers with EitherValues 
 
     implicit val containsCount = MessageAttributes.count("retryCount")
 
-    val message = new Message().withMessageAttributes(
-      Map("retryCount" -> new MessageAttributeValue().withDataType("Number").withStringValue("1sd")).asJava
-    )
+    val message = Message.builder()
+      .messageAttributes(
+        Map("retryCount" -> MessageAttributeValue.builder().dataType("Number").stringValue("1sd").build()).asJava
+      )
+      .build()
 
     message.getCount.left.value shouldBe NumberFormatError("1sd", message)
   }
@@ -63,25 +68,29 @@ class MessageAttributesTest extends AnyFlatSpec with Matchers with EitherValues 
 
     implicit val containsCount = MessageAttributes.count("retryCount")
 
-    val message = new Message().withMessageAttributes(
-      Map("retryCount" -> new MessageAttributeValue().withDataType("Number")).asJava
-    )
+    val message = Message.builder()
+      .messageAttributes(
+        Map("retryCount" -> MessageAttributeValue.builder().dataType("Number").build).asJava
+      )
+      .build()
 
-    message.getCount.left.value shouldBe NullValueError(new MessageAttributeValue().withDataType("Number"), message)
+    message.getCount.left.value shouldBe NullValueError(MessageAttributeValue.builder().dataType("Number").build(), message)
   }
 
   it should "not lose other message attributes" in {
 
     implicit val containsCount = MessageAttributes.count("retryCount")
 
-    val message = new Message().withMessageAttributes(
-      Map("someOtherThing" -> new MessageAttributeValue().withDataType("Number").withStringValue("1")).asJava
-    )
+    val message = Message.builder()
+      .messageAttributes(
+        Map("someOtherThing" -> MessageAttributeValue.builder().dataType("Number").stringValue("1").build()).asJava
+      )
+        .build()
 
-    message.setCount(3).getMessageAttributes.asScala should contain theSameElementsAs {
+    message.setCount(3).messageAttributes.asScala should contain theSameElementsAs {
         Map(
-          "someOtherThing" -> new MessageAttributeValue().withDataType("Number").withStringValue("1"),
-          "retryCount" -> new MessageAttributeValue().withDataType("Number").withStringValue("3")
+          "someOtherThing" -> MessageAttributeValue.builder().dataType("Number").stringValue("1").build(),
+          "retryCount" -> MessageAttributeValue.builder().dataType("Number").stringValue("3").build()
         )
     }
   }
