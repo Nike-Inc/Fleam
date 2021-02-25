@@ -32,7 +32,7 @@ object SerializedByKeyBidi {
     def unlock(key: Key): Unit
   }
 
-  /** A default [[scala.collection.mutable.Queue]] implementation of [[SerializedByKeyBidi.MutableKeyBuffer]] */
+  /** A default `scala.collection.mutable.Queue` implementation of [[SerializedByKeyBidi.MutableKeyBuffer]] */
   def queueBuffer[Key, Value](size: Int, lockDuration: FiniteDuration) = new MutableKeyBuffer[Key, Value] {
     case class KeyedValue(key: Key, value: Value)
     case class TimeLockedKey(key: Key, unlockTime: Instant)
