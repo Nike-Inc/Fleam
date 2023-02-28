@@ -16,7 +16,7 @@ package configuration {
     queue: SqsQueueConfiguration,
     source: SqsSourceConfiguration = Default.Sqs.sourceConfig,
     delete: SqsProcessingConfiguration = Default.Sqs.deleteConfig,
-    attributeNames: Set[String] = Set("ALL"),
+    attributeNames: Set[String] = Set("All"),
     messageAttributeNames: Set[String] = Set(Default.Sqs.MessageAttributes.All),
     region: String,
     waitTimeSeconds: Int = 20
