@@ -1,6 +1,9 @@
 Fleam release notes
 -------------------
 
+## Fleam 7.0.1
+* Fixes a wrong casing for SqsQueueProcessingConfiguration.attributeNames default value.
+
 ## Fleam 7.0.0
 * Updates to AWS Java SDK 2.
 * Changes the materializer for SqsSource to a UniqueKillSwitch to allow the source to be stopped without items in the

@@ -75,8 +75,8 @@ class SqsSourceTest extends AnyFlatSpec with Matchers with ScalaFutures {
       val expected = ReceiveMessageRequest.builder()
         .queueUrl(url)
         .maxNumberOfMessages(10)
-        //TODO: This should use types once this is fixed, see https://github.com/aws/aws-sdk-java-v2/issues/1892
-        .attributeNamesWithStrings("ALL")
+        //TODO: This should use types once this is fixed, see https://github.com/aws/aws-sdk-java-v2/issues/1117
+        .attributeNamesWithStrings("All")
         .messageAttributeNames("All")
         .waitTimeSeconds(0)
         .build()
@@ -85,7 +85,7 @@ class SqsSourceTest extends AnyFlatSpec with Matchers with ScalaFutures {
       Future.successful(response)
     }
 
-    val source = new SqsSource(fetcher).forQueue(url, attributeNames = Set("ALL")).take(2)
+    val source = new SqsSource(fetcher).forQueue(url, attributeNames = Set("All")).take(2)
 
     val result: Future[Seq[util.Map[MessageSystemAttributeName, String]]] = source.map(_.attributes).runWith(Sink.seq)
 
