@@ -15,7 +15,6 @@ lazy val depOverrides = Seq(
 )
 
 lazy val commonSettings = Seq(
-  resolvers += Resolver.sonatypeRepo("releases"),
   addCompilerPlugin("org.typelevel" % "kind-projector" % "0.11.0" cross CrossVersion.full),
   scalaVersion := currentScalaVersion,
   crossScalaVersions := scalaVersions,
@@ -41,7 +40,7 @@ lazy val commonSettings = Seq(
     "com.vladsch.flexmark" % "flexmark-all" % "0.35.10" % Test,
     "org.scalatest" %% "scalatest" % "3.1.0" % Test),
   dependencyOverrides ++= depOverrides,
-  scalacOptions in (Compile, console) ~=
+  Compile / console / scalacOptions ~=
     (_ filterNot Set("-Xfatal-warnings", "-Xlint", "-Ywarn-unused-import")),
   checkEvictionsTask := {
     if (evicted.value.reportedEvictions.nonEmpty) {
@@ -61,12 +60,10 @@ val releaseSettings = Seq(
   organizationName := "Nike",
   organizationHomepage := Some(url("http://engineering.nike.com")),
   releaseCrossBuild := true,
-  bintrayOrganization := Some("nike"),
-  bintrayPackageLabels := Seq("akka streams"),
-  bintrayReleaseOnPublish in ThisBuild := false,
+  publishTo := sonatypePublishToBundle.value,
   scalacOptions ++= sharedScalacOptions ++ Seq("-Xfatal-warnings", "-Xlint", "-Xlint:-adapted-args"),
-  scalacOptions in (Compile,console) ++= sharedScalacOptions,
-  scalacOptions in (Compile,doc) ++= sharedScalacOptions,
+  Compile / console / scalacOptions ++= sharedScalacOptions,
+  Compile / doc / scalacOptions ++= sharedScalacOptions,
   licenses += ("MIT", url("http://opensource.org/licenses/MIT")),
   homepage := Some(url("https://github.com/Nike-Inc/Fleam")),
   startYear := Some(2020),
@@ -86,8 +83,8 @@ val releaseSettings = Seq(
 val coverageSettings = Seq(
   coverageMinimum := 60,
   coverageFailOnMinimum := true,
-  testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oDF"),
-  testOptions in Test +=
+  Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-oDF"),
+  Test / testOptions +=
     Tests.Argument(TestFrameworks.ScalaTest, "-h", "target/test-reports-html"))
 
 
@@ -118,10 +115,8 @@ lazy val sqs = (project in file("./aws/sqs"))
   .settings(releaseSettings)
   .settings(coverageSettings)
   .settings(
-    resolvers += Resolver.bintrayRepo("nike", "maven"),
     name := "fleam-aws-sqs",
     description := "Fleam SQS is a library of classes to aid in processing AWS SQS messages in a functional manner",
-    bintrayPackageLabels ++= Seq("sqs", "aws"),
     libraryDependencies += "software.amazon.awssdk" % "sqs" % awsVersion exclude("commons-logging", "commons-logging"),
     libraryDependencies += "com.nike.fawcett" %% s"fawcett-sqs-v2" % "0.4.0")
 
@@ -135,7 +130,6 @@ lazy val cloudwatch = (project in file("./aws/cloudwatch"))
   .settings(
     name := "fleam-aws-cloudwatch",
     description := "Provides a class to create a flow which logs a count to Cloudwatch as part of the stream",
-    bintrayPackageLabels ++= Seq("cloudwatch", "aws"),
     libraryDependencies += "software.amazon.awssdk" % "cloudwatch" % awsVersion exclude("commons-logging", "commons-logging"))
 
 lazy val docs = (project in file("./mdoc"))
