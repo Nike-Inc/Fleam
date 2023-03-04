@@ -63,6 +63,7 @@ val releaseSettings = Seq(
   organizationHomepage := Some(url("http://engineering.nike.com")),
   releaseCrossBuild := true,
   publishTo := sonatypePublishToBundle.value,
+  sonatypeProfileName := "com.nike",
   scalacOptions ++= sharedScalacOptions ++ Seq("-Xfatal-warnings", "-Xlint", "-Xlint:-adapted-args"),
   Compile / console / scalacOptions ++= sharedScalacOptions,
   Compile / doc / scalacOptions ++= sharedScalacOptions,
