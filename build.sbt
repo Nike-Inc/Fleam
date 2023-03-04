@@ -80,6 +80,21 @@ val releaseSettings = Seq(
     )
   ))
 
+releaseProcess := Seq[ReleaseStep](
+  checkSnapshotDependencies,
+  inquireVersions,
+  runClean,
+  runTest,
+  setReleaseVersion,
+  commitReleaseVersion,
+  tagRelease,
+  releaseStepCommand("+publishSigned"),
+  releaseStepCommand("sonatypeBundleRelease"),
+  setNextVersion,
+  commitNextVersion,
+  pushChanges
+)
+
 val coverageSettings = Seq(
   coverageMinimum := 60,
   coverageFailOnMinimum := true,
