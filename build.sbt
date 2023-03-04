@@ -91,7 +91,7 @@ releaseProcess := Seq[ReleaseStep](
   setReleaseVersion,
   commitReleaseVersion,
   tagRelease,
-  releaseStepCommand("+publishSigned"),
+  releaseStepCommandAndRemaining("+publishSigned"),
   releaseStepCommand("sonatypeBundleRelease"),
   setNextVersion,
   commitNextVersion,
@@ -166,6 +166,7 @@ lazy val docs = (project in file("./mdoc"))
     publish := (()),
     publishLocal := (()),
     publishArtifact := false,
+    publish / skip := true,
     dependencyOverrides ++= Seq(
       "com.fasterxml.jackson.core" % "jackson-core" % "2.6.7",
       "com.fasterxml.jackson.core" % "jackson-databind" % "2.6.7.3",
