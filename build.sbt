@@ -1,3 +1,5 @@
+import ReleaseTransformations._
+
 val currentScalaVersion = "2.13.3"
 val scalaVersions = Seq("2.12.12", currentScalaVersion)
 val awsVersion = "2.15.29"
