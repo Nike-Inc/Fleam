@@ -71,7 +71,7 @@ object SerializedByKeyBidi {
  *                            Actual expiration time could be as large as expiration + expirationInterval.
  *  @param now A function to get the current time. Defaults to `Instant.now`.
  */
-  def apply[Key, In : Keyed[?, Key], Out : Keyed[?, Key]](
+  def apply[Key, In : Keyed[*, Key], Out : Keyed[*, Key]](
     bufferSize: Int,
     expiration: FiniteDuration,
     expirationInterval: FiniteDuration,
@@ -107,7 +107,7 @@ object SerializedByKeyBidi {
  *  val nonConcurrentUpdatesByKey: Flow[DatabaseUpdate, Updated, akka.NotUsed] = serializedByKey.join(updateFlow)
  *  }}}
  */
-class SerializedByKeyBidi[Key, In : Keyed[?, Key], Out : Keyed[?, Key]](
+class SerializedByKeyBidi[Key, In : Keyed[*, Key], Out : Keyed[*, Key]](
   buffer: SerializedByKeyBidi.MutableKeyBuffer[Key, In],
   expirationInterval: FiniteDuration,
   now: () => Instant = () => Instant.now) extends GraphStage[BidiShape[In, In, Out, Out]] {

@@ -193,9 +193,8 @@ class SqsRetry(
 
     type DeleteBatch = List[Message] => Future[BatchResult[Message]]
     val deletePartitioned = (messages: List[Message], delete: DeleteBatch) => {
-      val messageMap = messages.map(m => (m.messageId, m)).toMap
       delete(messages).map(batchResult => {
-        val successes = batchResult.successful.map(_.entry.id).flatMap(messageMap.get)
+        val successes = batchResult.successful.map(_.entity)
         val failures = batchResult.failed.map(failure =>
           OpFailure(failure.entity, EntryError(failure.entry.code, failure.entry.message).asLeft).asLeft[Message]
         )

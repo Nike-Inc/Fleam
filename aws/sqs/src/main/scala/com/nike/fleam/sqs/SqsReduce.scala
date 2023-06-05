@@ -67,7 +67,7 @@ class SqsReduce(
    *                      pattern of using MessageGroupId can be imported from [[com.nike.fleam.sqs.implicits.]]
    *  @return Flow from Item to either SqsReduceError or Items that had no duplicates
    */
-  def flow[Item : Semigroup : ContainsMessage : ToMessage : Keyed[?, Either[MessageError, GroupingKey]], GroupingKey : Order]:
+  def flow[Item : Semigroup : ContainsMessage : ToMessage : Keyed[*, Either[MessageError, GroupingKey]], GroupingKey : Order]:
       Flow[Item, Either[SqsReduceError[Item], Item], akka.NotUsed] = {
     config.grouping.toFlow[Item]
       .flatMapConcat { batch =>

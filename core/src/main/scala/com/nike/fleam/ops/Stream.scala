@@ -81,7 +81,7 @@ object Stream {
   }
 
   trait ToStreamOps {
-    implicit def flowStream[In, M[_], A, Mat]: Stream[Flow[In, ?, Mat], M, A] = new Stream[Flow[In, ?, Mat], M, A] {
+    implicit def flowStream[In, M[_], A, Mat]: Stream[Flow[In, *, Mat], M, A] = new Stream[Flow[In, *, Mat], M, A] {
       def map[B](flow: Flow[In, M[A], Mat])(f: M[A] => M[B]): Flow[In, M[B], Mat] = flow.map(f)
       def mapAsync[B](flow: Flow[In, M[A], Mat])(parallelism: Int)(f: M[A] => Future[M[B]]): Flow[In, M[B], Mat] =
         flow.mapAsync(parallelism)(f)
@@ -93,7 +93,7 @@ object Stream {
         flow.collect(f)
     }
 
-    implicit def sourceStream[M[_], A, Mat]: Stream[Source[?, Mat], M, A] = new Stream[Source[?, Mat], M, A] {
+    implicit def sourceStream[M[_], A, Mat]: Stream[Source[*, Mat], M, A] = new Stream[Source[*, Mat], M, A] {
       def map[B](source: Source[M[A], Mat])(f: M[A] => M[B]): Source[M[B], Mat] = source.map(f)
       def mapAsync[B](source: Source[M[A], Mat])(parallelism: Int)(f: M[A] => Future[M[B]]): Source[M[B], Mat] =
         source.mapAsync(parallelism)(f)
@@ -107,7 +107,7 @@ object Stream {
 
     implicit def toStreamOps[M[_], A, Mat]
       (target: Source[M[A], Mat])
-      (implicit tc: Stream[Source[?, Mat], M, A]): Ops[Source[?, Mat], M, A] = new Ops[Source[?, Mat], M, A] {
+      (implicit tc: Stream[Source[*, Mat], M, A]): Ops[Source[*, Mat], M, A] = new Ops[Source[*, Mat], M, A] {
       val self = target
       val typeClassInstance = tc
     }
@@ -115,7 +115,7 @@ object Stream {
     // Define a specific one for flow since it has 3 type arguments
     implicit def toStreamOps[In, M[_], A, Mat]
       (target: Flow[In, M[A], Mat])
-      (implicit tc: Stream[Flow[In, ?, Mat], M, A]): Ops[Flow[In, ?, Mat], M, A] = new Ops[Flow[In, ?, Mat], M, A] {
+      (implicit tc: Stream[Flow[In, *, Mat], M, A]): Ops[Flow[In, *, Mat], M, A] = new Ops[Flow[In, *, Mat], M, A] {
       val self = target
       val typeClassInstance = tc
     }
@@ -136,7 +136,7 @@ object Stream {
     // Define a specific one for flow since it has 3 type arguments
     implicit def toAllStreamOps[In, M[_], A, Mat]
       (target: Flow[In, M[A], Mat])
-      (implicit tc: Stream[Flow[In, ?, Mat], M, A]): AllOps[Flow[In, ?, Mat], M, A] = new AllOps[Flow[In, ?, Mat], M, A] {
+      (implicit tc: Stream[Flow[In, *, Mat], M, A]): AllOps[Flow[In, *, Mat], M, A] = new AllOps[Flow[In, *, Mat], M, A] {
       val self = target
       val typeClassInstance = tc
     }

@@ -60,11 +60,11 @@ class SqsRetryTest extends AnyFlatSpec with Matchers with ScalaFutures with Eith
       deleteMessages: List[Message] => Future[BatchResult[Message]] =
         messages => Future.successful(BatchResult(
           deleteMessageBatchResponse = DeleteMessageBatchResponse.builder()
-            .successful(messages.map(m => DeleteMessageBatchResultEntry.builder().id(m.messageId).build()):_*)
+            .successful(messages.mapWithIndex((m, i) => DeleteMessageBatchResultEntry.builder().id(i.toString()).build()):_*)
             .build(),
           failed = Nil,
           successful = messages
-            .map(m => SuccessfulResult(m, DeleteMessageBatchResultEntry.builder().id(m.messageId).build()))
+            .mapWithIndex((m, i) => SuccessfulResult(m, DeleteMessageBatchResultEntry.builder().id(i.toString()).build()))
           )),
       deadLetterEnqueueMessage: List[Message] => Future[Either[SqsEnqueueError, SendMessageBatchResponse]] =
         messages => Future.successful(Right(SendMessageBatchResponse.builder.build())),
