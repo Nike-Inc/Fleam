@@ -1,7 +1,7 @@
 import ReleaseTransformations._
 
-val currentScalaVersion = "2.13.3"
-val scalaVersions = Seq("2.12.12", currentScalaVersion)
+val currentScalaVersion = "2.13.10"
+val scalaVersions = Seq("2.12.17", currentScalaVersion)
 val awsVersion = "2.15.29"
 val akkaVersion = "2.6.10"
 val catsCore = "org.typelevel" %% "cats-core" % "2.2.0"
@@ -17,7 +17,7 @@ lazy val depOverrides = Seq(
 )
 
 lazy val commonSettings = Seq(
-  addCompilerPlugin("org.typelevel" % "kind-projector" % "0.11.0" cross CrossVersion.full),
+  addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.2" cross CrossVersion.full),
   scalaVersion := currentScalaVersion,
   crossScalaVersions := scalaVersions,
   scalacOptions ++= (CrossVersion.partialVersion(scalaVersion.value) match {
@@ -99,7 +99,7 @@ releaseProcess := Seq[ReleaseStep](
 )
 
 val coverageSettings = Seq(
-  coverageMinimum := 60,
+  coverageMinimumStmtTotal := 60,
   coverageFailOnMinimum := true,
   Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-oDF"),
   Test / testOptions +=

@@ -18,8 +18,8 @@ import scala.language.implicitConversions
 
 trait EitherStream[S[_], L, R] {
 
-  def leftFixed: Stream[S, Either[L, ?], R]
-  def unfixed: Stream[S, Id[?], Either[L, R]]
+  def leftFixed: Stream[S, Either[L, *], R]
+  def unfixed: Stream[S, Id[*], Either[L, R]]
 
   /** Takes a function from `R => R1` and only applies it if the incoming `Either[L, R]` is `R` */
   def eitherMap[R1](stream: S[Either[L, R]])(f: R => R1): S[Either[L, R1]] =
@@ -172,28 +172,28 @@ object EitherStream {
   }
 
   trait ToEitherStreamOps {
-    implicit def eitherFlowStream[In, L, R, Mat]: EitherStream[Flow[In, ?, Mat], L, R] = new EitherStream[Flow[In, ?, Mat], L, R] {
-      def leftFixed: Stream[Flow[In, ?, Mat], Either[L, ?], R] =
-        stream.flowStream[In, Either[L, ?], R, Mat]
-      def unfixed: Stream[Flow[In, ?, Mat], Id[?], Either[L, R]] =
-        stream.flowStream[In, Id[?], Either[L, R], Mat]
+    implicit def eitherFlowStream[In, L, R, Mat]: EitherStream[Flow[In, *, Mat], L, R] = new EitherStream[Flow[In, *, Mat], L, R] {
+      def leftFixed: Stream[Flow[In, *, Mat], Either[L, *], R] =
+        stream.flowStream[In, Either[L, *], R, Mat]
+      def unfixed: Stream[Flow[In, *, Mat], Id[*], Either[L, R]] =
+        stream.flowStream[In, Id[*], Either[L, R], Mat]
     }
 
-    implicit def eitherSourceStream[L, R, Mat]: EitherStream[Source[?, Mat], L, R] = new EitherStream[Source[?, Mat], L, R] {
-      def leftFixed: Stream[Source[?, Mat], Either[L, ?], R] =
-        stream.sourceStream[Either[L, ?], R, Mat]
-      def unfixed: Stream[Source[?, Mat], Id[?], Either[L, R]] =
-        stream.sourceStream[Id[?], Either[L, R], Mat]
+    implicit def eitherSourceStream[L, R, Mat]: EitherStream[Source[*, Mat], L, R] = new EitherStream[Source[*, Mat], L, R] {
+      def leftFixed: Stream[Source[*, Mat], Either[L, *], R] =
+        stream.sourceStream[Either[L, *], R, Mat]
+      def unfixed: Stream[Source[*, Mat], Id[*], Either[L, R]] =
+        stream.sourceStream[Id[*], Either[L, R], Mat]
     }
     implicit def toEitherStreamOps[L, R, Mat]
         (target: Source[Either[L, R], Mat])
-        (implicit tc: EitherStream[Source[?, Mat], L, R]): Ops[Source[?, Mat], L, R] = new Ops[Source[?, Mat], L, R] {
+        (implicit tc: EitherStream[Source[*, Mat], L, R]): Ops[Source[*, Mat], L, R] = new Ops[Source[*, Mat], L, R] {
       val self = target
       val typeClassInstance = tc
     }
     implicit def toEitherStreamOps[In, L, R, Mat]
         (target: Flow[In, Either[L, R], Mat])
-        (implicit tc: EitherStream[Flow[In, ?, Mat], L, R]): Ops[Flow[In, ?, Mat], L, R] = new Ops[Flow[In, ?, Mat], L, R] {
+        (implicit tc: EitherStream[Flow[In, *, Mat], L, R]): Ops[Flow[In, *, Mat], L, R] = new Ops[Flow[In, *, Mat], L, R] {
       val self = target
       val typeClassInstance = tc
     }
@@ -212,7 +212,7 @@ object EitherStream {
     }
     implicit def toAllEitherStreamOps[In, L, R, Mat]
         (target: Flow[In, Either[L, R], Mat])
-        (implicit tc: EitherStream[Flow[In, ?, Mat], L, R]): AllOps[Flow[In, ?, Mat], L, R] = new AllOps[Flow[In, ?, Mat], L, R] {
+        (implicit tc: EitherStream[Flow[In, *, Mat], L, R]): AllOps[Flow[In, *, Mat], L, R] = new AllOps[Flow[In, *, Mat], L, R] {
       val self = target
       val typeClassInstance = tc
     }

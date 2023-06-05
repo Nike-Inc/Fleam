@@ -37,7 +37,7 @@ class StreamDaemon(name: String)(implicit ec: ExecutionContext) {
       .viaMat(pipeline)(Keep.both)
       .toMat(sink)(Keep.both)
     val (((sourceMat, ks), pipelineMat), out) = graph.run()
-    killSwitchPromise.success(List(sourceMat, ks, pipelineMat).collect { case killSwitch: KillSwitch => killSwitch })
+    killSwitchPromise.success(List[Any](sourceMat, ks, pipelineMat).collect { case killSwitch: KillSwitch => killSwitch })
     out
   }
 

@@ -17,12 +17,12 @@ import scala.language.implicitConversions
 trait EitherFlattenIterableOps {
 
   implicit def eitherFlattenIterableFlowOps[A, L, R, Mat](flow: Graph[FlowShape[A, Either[L, Iterable[R]]], Mat]):
-    EitherFlattenIterable[Flow[A, ?, Mat], L, R] =
-      new EitherFlattenIterable[Flow[A, ?, Mat], L, R](Flow.fromGraph(flow))
+    EitherFlattenIterable[Flow[A, *, Mat], L, R] =
+      new EitherFlattenIterable[Flow[A, *, Mat], L, R](Flow.fromGraph(flow))
 
   implicit def eitherFlattenIterableSourceOps[L, R, Mat](source: Graph[SourceShape[Either[L, Iterable[R]]], Mat]):
-    EitherFlattenIterable[Source[?, Mat], L, R] =
-      new EitherFlattenIterable[Source[?, Mat], L, R](Source.fromGraph(source))
+    EitherFlattenIterable[Source[*, Mat], L, R] =
+      new EitherFlattenIterable[Source[*, Mat], L, R](Source.fromGraph(source))
 }
 
 object EitherFlattenIterableOps extends EitherFlattenIterableOps

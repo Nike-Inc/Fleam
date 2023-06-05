@@ -39,6 +39,6 @@ object Keyed {
     def getKey(t: T): Key = f(t)
   }
 
-  implicit def keyedEither[Key, L: Keyed[?, Key], R: Keyed[?, Key]]: Keyed[Either[L, R], Key] =
+  implicit def keyedEither[Key, L: Keyed[*, Key], R: Keyed[*, Key]]: Keyed[Either[L, R], Key] =
     Keyed.lift(_.fold(implicitly[Keyed[L, Key]].getKey, implicitly[Keyed[R, Key]].getKey))
 }
