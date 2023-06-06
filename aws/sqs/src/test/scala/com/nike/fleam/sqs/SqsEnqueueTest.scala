@@ -24,7 +24,7 @@ class SqsEnqueueTest extends AnyFlatSpec with Matchers with ScalaFutures {
 
   case class MessageEntry(id: String, body: String)
 
-  implicit val MessageEntryToMessage = new ToMessage[MessageEntry] {
+  implicit val MessageEntryToMessage: ToMessage[MessageEntry] = new ToMessage[MessageEntry] {
     def toMessage(entry: MessageEntry) =
       Message.builder().messageId(entry.id).body(entry.body).build()
   }

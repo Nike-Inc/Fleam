@@ -109,7 +109,7 @@ class SqsRetry(
     retryCountKey: String,
     now: () => Instant) {
 
-  implicit val messageContainsCount = MessageAttributes.count(retryCountKey)
+  implicit val messageContainsCount: ContainsCount[Message, MessageAttributes.Count] = MessageAttributes.count(retryCountKey)
 
   def flow[In: ContainsMessage : RetrievedTime](
       retry: PartialFunction[In, Map[String, MessageAttributeValue]],

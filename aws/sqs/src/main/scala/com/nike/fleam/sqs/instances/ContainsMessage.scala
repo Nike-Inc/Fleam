@@ -13,15 +13,15 @@ import ContainsMessage.ops._
  **/
 
 trait ContainsMessageInstances {
-  implicit val retrievedContainsMessage = ContainsMessage.lift[RetrievedMessage](_.message)
+  implicit val retrievedContainsMessage: ContainsMessage[RetrievedMessage] = ContainsMessage.lift[RetrievedMessage](_.message)
 
-  implicit val sqsRetryErrorContainsMessage = ContainsMessage.lift[SqsRetryError[_]](_.message)
+  implicit val sqsRetryErrorContainsMessage: ContainsMessage[SqsRetryError[_]] = ContainsMessage.lift[SqsRetryError[_]](_.message)
 
-  implicit def messageFromRetrievedContainsMessage[T: ContainsRetrievedMessage] = ContainsMessage.lift[T] {
+  implicit def messageFromRetrievedContainsMessage[T: ContainsRetrievedMessage]: ContainsMessage[T] = ContainsMessage.lift[T] {
     _.getRetrievedMessage.getMessage
   }
 
-  implicit val messageContainsMessage = ContainsMessage.lift[Message](identity)
+  implicit val messageContainsMessage: ContainsMessage[Message] = ContainsMessage.lift[Message](identity)
 }
 
 object ContainsMessageInstances extends ContainsMessageInstances

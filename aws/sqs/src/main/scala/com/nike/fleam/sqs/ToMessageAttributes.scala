@@ -2,7 +2,6 @@ package com.nike.fleam.sqs
 
 import software.amazon.awssdk.services.sqs.model.MessageAttributeValue
 import simulacrum._
-import scala.language.implicitConversions
 
 /** Copyright 2020-present, Nike, Inc.
  * All rights reserved.
@@ -21,7 +20,7 @@ object ToMessageAttributes {
     def toMessageAttributes(t: T): Map[String, MessageAttributeValue] = f(t)
   }
 
-  implicit def eitherToMessageAttributes[L: ToMessageAttributes, R: ToMessageAttributes] = lift[Either[L, R]](
+  implicit def eitherToMessageAttributes[L: ToMessageAttributes, R: ToMessageAttributes]: ToMessageAttributes[Either[L, R]] = lift[Either[L, R]](
     _.fold(ToMessageAttributes[L].toMessageAttributes, ToMessageAttributes[R].toMessageAttributes)
   )
 }

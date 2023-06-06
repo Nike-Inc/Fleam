@@ -21,7 +21,7 @@ package object logging {
     show"${message.toString}"
   }
 
-  implicit val opErrorShow = Show.show[OpError] {
+  implicit val opErrorShow: Show[OpError] = Show.show[OpError] {
     case Right(error) => Show[SqsEnqueueError].show(error)
     case Left(error) => Show[EntryError].show(error)
   }

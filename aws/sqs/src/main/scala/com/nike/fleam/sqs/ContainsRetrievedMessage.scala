@@ -1,7 +1,6 @@
 package com.nike.fleam.sqs
 
 import simulacrum._
-import scala.language.implicitConversions
 
 /** Copyright 2020-present, Nike, Inc.
  * All rights reserved.
@@ -23,7 +22,7 @@ object ContainsRetrievedMessage {
     def getRetrievedMessage(t: T): RetrievedMessage = f(t)
   }
 
-  implicit def eitherContainsRetrievedMessage[L: ContainsRetrievedMessage, R: ContainsRetrievedMessage] =
+  implicit def eitherContainsRetrievedMessage[L: ContainsRetrievedMessage, R: ContainsRetrievedMessage]: ContainsRetrievedMessage[Either[L,R]] =
     lift[Either[L, R]](_.fold(
       ContainsRetrievedMessage[L].getRetrievedMessage,
       ContainsRetrievedMessage[R].getRetrievedMessage))

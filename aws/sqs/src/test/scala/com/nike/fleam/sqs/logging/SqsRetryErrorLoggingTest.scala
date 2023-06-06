@@ -21,7 +21,7 @@ class SqsRetryErrorLoggingTest extends AnyFlatSpec with Matchers {
     s"message: {messageId='${message.messageId}'}"
   }
 
-  implicit val errorShow = new SqsRetryErrorLogging[Int](showMessage = showMessage).sqsRetryErrorShow
+  implicit val errorShow: Show[SqsRetryError[Int]] = new SqsRetryErrorLogging[Int](showMessage = showMessage).sqsRetryErrorShow
 
   val message = Message.builder.messageId("message-1").build()
 

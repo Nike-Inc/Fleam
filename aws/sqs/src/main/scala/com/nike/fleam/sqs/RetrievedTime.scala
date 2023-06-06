@@ -2,7 +2,6 @@ package com.nike.fleam.sqs
 
 import java.time.Instant
 import simulacrum._
-import scala.language.implicitConversions
 import scala.concurrent.duration._
 
 /** Copyright 2020-present, Nike, Inc.
@@ -23,7 +22,7 @@ object RetrievedTime {
     def getRetrievedTime(t: T): Instant = f(t)
   }
 
-  implicit def eitherRetrievedTime[L: RetrievedTime, R: RetrievedTime] = lift[Either[L, R]] {
+  implicit def eitherRetrievedTime[L: RetrievedTime, R: RetrievedTime]: RetrievedTime[Either[L, R]] = lift[Either[L, R]] {
     _.fold(RetrievedTime[L].getRetrievedTime, RetrievedTime[R].getRetrievedTime)
   }
 }

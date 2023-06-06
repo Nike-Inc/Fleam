@@ -11,7 +11,7 @@ trying downstream systems.
 ```scala mdoc:invisible
 import akka.actor.ActorSystem
 
-implicit val actorSystem = ActorSystem("tut")
+implicit val actorSystem: ActorSystem = ActorSystem("tut")
 ```
 First we'll need a CircuitBreaker.
 ```scala mdoc:silent

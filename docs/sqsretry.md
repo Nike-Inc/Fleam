@@ -63,7 +63,7 @@ import java.time.Instant
 
 case class Item(foo: String, bar: Int, message: Message, retrieved: Instant)
 
-implicit val itemRetrievedTimed = RetrievedTime[Item] { item =>
+implicit val itemRetrievedTimed: RetrievedTime[Item] = RetrievedTime { item =>
   item.retrieved
 }
 ```
@@ -91,7 +91,7 @@ required to be implicitly in scope when we create our retry flow.
 ```scala
 import com.nike.fleam.sqs.ContainsMessage
 
-implicit val itemContainsMessage = ContainsMessage[Item] { item =>
+implicit val itemContainsMessage: ContainsMessage[Item] = ContainsMessage { item =>
   item.message
 }
 ```

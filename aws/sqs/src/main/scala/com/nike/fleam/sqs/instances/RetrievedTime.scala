@@ -12,9 +12,9 @@ import RetrievedTime.ops._
  **/
 
 trait RetrievedTimeInstances {
-  implicit val receivedMessageRetrievedTime = RetrievedTime.lift[RetrievedMessage](_.timestamp)
+  implicit val receivedMessageRetrievedTime: RetrievedTime[RetrievedMessage] = RetrievedTime.lift[RetrievedMessage](_.timestamp)
 
-  implicit def retrievedTimeFromContainsRetrievedMessage[T: ContainsRetrievedMessage] = RetrievedTime.lift[T] {
+  implicit def retrievedTimeFromContainsRetrievedMessage[T: ContainsRetrievedMessage]: RetrievedTime[T] = RetrievedTime.lift[T] {
     _.getRetrievedMessage.getRetrievedTime
   }
 }

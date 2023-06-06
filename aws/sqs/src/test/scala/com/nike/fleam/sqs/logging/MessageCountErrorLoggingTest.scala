@@ -5,6 +5,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import software.amazon.awssdk.services.sqs.model.{Message, MessageAttributeValue}
 import cats.implicits._
+import cats.Show
 
 /** Copyright 2020-present, Nike, Inc.
  * All rights reserved.
@@ -14,7 +15,7 @@ import cats.implicits._
  **/
 
 class MessageCountErrorLoggingTest extends AnyFlatSpec with Matchers {
-  implicit val errorShow = new MessageCountErrorLogging().messageCountErrorShow
+  implicit val errorShow: Show[MessageCountError] = new MessageCountErrorLogging().messageCountErrorShow
 
   it should "Log a failure to parse a count" in {
     (NumberFormatError("number-1", Message.builder.build()) : MessageCountError).show shouldBe

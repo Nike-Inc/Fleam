@@ -30,7 +30,7 @@ need to be aware of the tuple and the flow only needs minimal boiler-plate for j
 ```scala mdoc:invisible
 import akka.actor.ActorSystem
 
-implicit val actorSystem = ActorSystem("tut")
+implicit val actorSystem: ActorSystem = ActorSystem("tut")
 import actorSystem.dispatcher
 ```
 

@@ -1,7 +1,6 @@
 package com.nike.fleam.sqs
 
 import software.amazon.awssdk.services.sqs.model.Message
-import scala.language.implicitConversions
 import simulacrum._
 
 /** Copyright 2020-present, Nike, Inc.
@@ -20,7 +19,7 @@ object ContainsMessage {
     def getMessage(t: T) = f(t)
   }
 
-  implicit def eitherContainsMessage[L: ContainsMessage, R: ContainsMessage] = lift[Either[L, R]] {
+  implicit def eitherContainsMessage[L: ContainsMessage, R: ContainsMessage]: ContainsMessage[Either[L,R]] = lift[Either[L, R]] {
     _.fold(ContainsMessage[L].getMessage, ContainsMessage[R].getMessage)
   }
 

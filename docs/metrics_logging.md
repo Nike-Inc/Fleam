@@ -65,7 +65,7 @@ which sums items at some max `batchSize` or within some time frame. This saves u
 item. The counter doesn't impede the flow of the stream.
 ```scala
 
-implicit val itemTextCounter = new Counter[Item, LogMessage] {
+implicit val itemTextCounter: Counter[Item, LogMessage] = new Counter[Item, LogMessage] {
   val flow = Counters.countWithin[Item](textLoggingConfig).map(count => LogMessage(s"Processed $count items"))
 }
 ```
@@ -104,7 +104,7 @@ import software.amazon.awssdk.services.cloudwatch.model.PutMetricDataRequest
 
 val cloudwatchLoggingConfig = config2.as[GroupedWithinConfiguration]("cloudwatchLogger")
 
-implicit val itemCloudwatchCounter = new Counter[Item, PutMetricDataRequest] {
+implicit val itemCloudwatchCounter: Counter[Item, PutMetricDataRequest] = new Counter[Item, PutMetricDataRequest] {
   val flow = Counters.countWithin[Item](cloudwatchLoggingConfig).map(count =>
     CloudWatch.wrap(
       namespace = "Example",

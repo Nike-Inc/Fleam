@@ -41,11 +41,11 @@ class SqsRetryTest extends AnyFlatSpec with Matchers with ScalaFutures with Eith
   case class KaBoom(retrieved: RetrievedMessage) extends Examples
   case class NumberedKerplow(i: Int, retrieved: RetrievedMessage) extends Examples
 
-  implicit val examplesContainsMessage = new ContainsMessage[Examples] {
+  implicit val examplesContainsMessage: ContainsMessage[Examples] = new ContainsMessage[Examples] {
     def getMessage(example: Examples): Message = example.retrieved.message
   }
 
-  implicit val examplesRetrievedTime = new RetrievedTime[Examples] {
+  implicit val examplesRetrievedTime: RetrievedTime[Examples] = new RetrievedTime[Examples] {
     def getRetrievedTime(example: Examples) =
       implicitly[RetrievedTime[RetrievedMessage]].getRetrievedTime(example.retrieved)
   }

@@ -1,6 +1,11 @@
 Fleam release notes
 -------------------
 
+## Fleam 7.1.0
+
+* Updates dependency versions
+* Changes logback and jcl-over-slf4j dependencies to be test only
+
 ## Fleam 7.0.2
 
 * Fixes an issue where `SqsRetry` would incorrectly not find the successful delete of message in a batch delete and produce an error instead of a success. This error was introduced in 7.0.0 by the `SqsDelete` change for the entry id.

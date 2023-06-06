@@ -16,7 +16,7 @@ class KeyedTest extends AnyFlatSpec with Matchers {
 
   case class Example(key: String)
 
-  implicit val keyedExample = Keyed.lift[Example, String](_.key)
+  implicit val keyedExample: Keyed[Example, String] = Keyed.lift[Example, String](_.key)
 
   it should "let you use the ops syntax" in {
     val example = Example("persistence")
