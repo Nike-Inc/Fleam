@@ -38,7 +38,7 @@ object ContainsCount {
     }
   }
 
-  implicit def eitherContainsCount[F[_], L: ContainsCount[*, F], R: ContainsCount[*, F]] =
+  implicit def eitherContainsCount[F[_], L: ContainsCount[*, F], R: ContainsCount[*, F]]: ContainsCount[Either[L, R], F] =
     new ContainsCount[Either[L, R], F] {
       def getCount(e: Either[L, R]) = e.fold(implicitly[ContainsCount[L, F]].getCount, implicitly[ContainsCount[R, F]].getCount)
       def setCount(e: Either[L, R])(count: Int) =

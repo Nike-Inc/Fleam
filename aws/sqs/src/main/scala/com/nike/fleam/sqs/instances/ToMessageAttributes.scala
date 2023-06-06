@@ -11,25 +11,26 @@ import software.amazon.awssdk.services.sqs.model.MessageAttributeValue
  **/
 
 trait ToMessageAttributesInstances {
-  implicit val identityToMessageAttributes = ToMessageAttributes.lift[Map[String, MessageAttributeValue]](identity)
+  implicit val identityToMessageAttributes: ToMessageAttributes[Map[String, MessageAttributeValue]] =
+    ToMessageAttributes.lift[Map[String, MessageAttributeValue]](identity)
 
-  implicit val tupleStringStringToMessageAttributes = ToMessageAttributes.lift[(String, String)] { case (key, value) =>
+  implicit val tupleStringStringToMessageAttributes: ToMessageAttributes[(String, String)] = ToMessageAttributes.lift[(String, String)] { case (key, value) =>
     Map(key -> MessageAttributeValue.builder().dataType("String").stringValue(value).build())
   }
 
-  implicit val tupleStringIntToMessageAttributes = ToMessageAttributes.lift[(String, Int)] { case (key, value) =>
+  implicit val tupleStringIntToMessageAttributes: ToMessageAttributes[(String, Int)] = ToMessageAttributes.lift[(String, Int)] { case (key, value) =>
     Map(key -> MessageAttributeValue.builder().dataType("Number").stringValue(value.toString).build())
   }
 
-  implicit val tupleStringLongToMessageAttributes = ToMessageAttributes.lift[(String, Long)] { case (key, value) =>
+  implicit val tupleStringLongToMessageAttributes: ToMessageAttributes[(String, Long)] = ToMessageAttributes.lift[(String, Long)] { case (key, value) =>
     Map(key -> MessageAttributeValue.builder().dataType("Number").stringValue(value.toString).build())
   }
 
-  implicit val tupleStringDoubleToMessageAttributes = ToMessageAttributes.lift[(String, Double)] { case (key, value) =>
+  implicit val tupleStringDoubleToMessageAttributes: ToMessageAttributes[(String, Double)] = ToMessageAttributes.lift[(String, Double)] { case (key, value) =>
     Map(key -> MessageAttributeValue.builder().dataType("Number").stringValue(value.toString).build())
   }
 
-  implicit def tupleMapStringTToMessageAttributes[T](implicit single: ToMessageAttributes[(String, T)]) =
+  implicit def tupleMapStringTToMessageAttributes[T](implicit single: ToMessageAttributes[(String, T)]): ToMessageAttributes[Map[String, T]] =
     ToMessageAttributes.lift[Map[String, T]] { case mapping =>
       mapping.map(single.toMessageAttributes).reduceLeft(_ ++ _)
     }

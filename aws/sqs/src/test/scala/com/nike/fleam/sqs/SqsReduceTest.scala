@@ -35,7 +35,7 @@ class SqsReduceTest extends AnyFlatSpec with Matchers with ScalaFutures with Eit
     grouping = new GroupedWithinConfiguration(batchSize = 10, within = 1.seconds),
     deleteParallelism = 1)
 
-  implicit val messageSemigroup = new Semigroup[Message] {
+  implicit val messageSemigroup: Semigroup[Message] = new Semigroup[Message] {
     def combine(left: Message, right: Message): Message = {
       left
     }

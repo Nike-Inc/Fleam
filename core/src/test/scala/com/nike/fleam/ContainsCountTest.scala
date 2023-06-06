@@ -17,7 +17,7 @@ class ContainsCountTest extends AnyFlatSpec with Matchers {
 
   import ops.all._
 
-  implicit val exampleContainsCount = new ContainsCount[Example, Id] {
+  implicit val exampleContainsCount: ContainsCount[Example, Id] = new ContainsCount[Example, Id] {
     def getCount(example: Example): Id[Int] = example.i
     def setCount(example: Example)(i: Int): Example = Example(i)
   }

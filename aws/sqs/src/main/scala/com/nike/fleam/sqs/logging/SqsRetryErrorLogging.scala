@@ -10,11 +10,11 @@ class SqsRetryErrorLogging[T](
   showMessage: Show[Message] = logging.noShow[Message],
   showMessageCountError: Show[MessageCountError] = new MessageCountErrorLogging().messageCountErrorShow) {
 
-  implicit private val tShow = showT
-  implicit private val messageShow = showMessage
-  implicit private val messageCountErrorShow = showMessageCountError
+  implicit private val tShow: Show[T] = showT
+  implicit private val messageShow: Show[Message] = showMessage
+  implicit private val messageCountErrorShow: Show[MessageCountError] = showMessageCountError
 
-  implicit val sqsRetryErrorShow = Show.show[SqsRetryError[T]] {
+  implicit val sqsRetryErrorShow: Show[SqsRetryError[T]] = Show.show[SqsRetryError[T]] {
     case countError: CountError[T] =>
       join(
         show"Failed to retrieve a valid retry count from message.",

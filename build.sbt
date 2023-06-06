@@ -1,18 +1,19 @@
 import ReleaseTransformations._
 
-val currentScalaVersion = "2.13.10"
+val currentScalaVersion = "2.13.11"
 val scalaVersions = Seq("2.12.17", currentScalaVersion)
-val awsVersion = "2.15.29"
-val akkaVersion = "2.6.10"
-val catsCore = "org.typelevel" %% "cats-core" % "2.2.0"
+val awsVersion = "2.20.79"
+val akkaVersion = "2.6.20"
+val catsCore = "org.typelevel" %% "cats-core" % "2.9.0"
 
 val checkEvictionsTask = taskKey[Unit]("Task that fails build if there are evictions")
 
 lazy val depOverrides = Seq(
-  "org.slf4j" % "slf4j-api" % "1.7.30",
-  "org.slf4j" % "jcl-over-slf4j" % "1.7.30",
-  "io.netty" % "netty-codec-http" % "4.1.53.Final",
-  "io.netty" % "netty-handler" % "4.1.53.Final",
+  "org.slf4j" % "slf4j-api" % "1.7.36",
+  "org.slf4j" % "jcl-over-slf4j" % "1.7.36",
+  "io.netty" % "netty-codec-http" % "4.1.86.Final",
+  "io.netty" % "netty-handler" % "4.1.86.Final",
+  "com.typesafe" % "config" % "1.4.2",
   catsCore
 )
 
@@ -36,9 +37,9 @@ lazy val commonSettings = Seq(
     case _ => Nil
   }),
   libraryDependencies ++= Seq(
-    "ch.qos.logback" % "logback-classic" % "1.2.3",
     "org.slf4j" % "slf4j-api" % "1.7.30",
-    "org.slf4j" % "jcl-over-slf4j" % "1.7.30",
+    "org.slf4j" % "jcl-over-slf4j" % "1.7.30" % Test,
+    "ch.qos.logback" % "logback-classic" % "1.2.12" % Test,
     "com.vladsch.flexmark" % "flexmark-all" % "0.35.10" % Test,
     "org.scalatest" %% "scalatest" % "3.1.0" % Test),
   dependencyOverrides ++= depOverrides,
@@ -120,8 +121,8 @@ lazy val core = (project in file("./core"))
       "com.typesafe.akka" %% "akka-actor" % akkaVersion,
       "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
       catsCore,
-      "org.typelevel" %% "simulacrum" % "1.0.0",
-      "org.typelevel" %% "discipline-core" % "1.0.0" % Test
+      "org.typelevel" %% "simulacrum" % "1.0.1",
+      "org.typelevel" %% "discipline-core" % "1.5.1" % Test
     ),
     coverageExcludedPackages := "")
 
@@ -160,8 +161,8 @@ lazy val docs = (project in file("./mdoc"))
   .settings(
     libraryDependencies ++= Seq(
       "org.scalameta" %% "mdoc" % "2.1.1",
-      "org.json4s" %% "json4s-jackson" % "3.6.7",
-      "com.iheart" %% "ficus" % "1.4.7"
+      "org.json4s" %% "json4s-jackson" % "3.6.12",
+      "com.iheart" %% "ficus" % "1.5.2"
     ),
     publish := (()),
     publishLocal := (()),
@@ -170,7 +171,7 @@ lazy val docs = (project in file("./mdoc"))
     dependencyOverrides ++= Seq(
       "com.fasterxml.jackson.core" % "jackson-core" % "2.6.7",
       "com.fasterxml.jackson.core" % "jackson-databind" % "2.6.7.3",
-      "com.typesafe" % "config" % "1.3.4",
+      "com.typesafe" % "config" % "1.4.2",
       "org.jboss.logging" % "jboss-logging" % "3.4.0.Final",
       "org.wildfly.common" % "wildfly-common" % "1.5.2.Final",
       "org.jboss.xnio" % "xnio-nio" % "3.7.7.Final",

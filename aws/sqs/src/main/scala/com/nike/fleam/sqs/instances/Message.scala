@@ -19,17 +19,18 @@ sealed trait MessageError
 case class MissingGroupingKey(message: Message) extends MessageError
 
 trait MessageInstances {
-  implicit val messageGroupIdKeyed = Keyed.lift[Message, Either[MissingGroupingKey, MessageGroupId]] { message =>
-    Either.fromOption(
-      (MessageLens.attributes composeLens at(MessageSystemAttributeName.MESSAGE_GROUP_ID) get(message)).map(MessageGroupId),
-      MissingGroupingKey(message))
-  }
+  implicit val messageGroupIdKeyed: Keyed[Message, Either[MissingGroupingKey, MessageGroupId]] =
+    Keyed.lift[Message, Either[MissingGroupingKey, MessageGroupId]] { message =>
+      Either.fromOption(
+        (MessageLens.attributes composeLens at(MessageSystemAttributeName.MESSAGE_GROUP_ID) get(message)).map(MessageGroupId),
+        MissingGroupingKey(message))
+    }
 
-  implicit val messageGroupIdOrdering = Order.by[MessageGroupId, String](_.value)
+  implicit val messageGroupIdOrdering: Order[MessageGroupId] = Order.by[MessageGroupId, String](_.value)
 
   implicit val showMessageId: Show[MessageId] = Show.show(_.value)
 
-  implicit val messageToMessage = ToMessage.lift[Message](identity)
+  implicit val messageToMessage: ToMessage[Message] = ToMessage.lift[Message](identity)
 }
 
 object MessageInstances extends MessageInstances

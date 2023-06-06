@@ -5,7 +5,7 @@ import akka.stream.{ActorAttributes, Materializer}
 import akka.stream.Supervision.Resume
 import com.typesafe.config.ConfigFactory
 
-import scala.concurrent.{Future, Promise}
+import scala.concurrent.{Future, ExecutionContext, Promise}
 
 /** Copyright 2020-present, Nike, Inc.
  * All rights reserved.
@@ -19,8 +19,8 @@ object TestTools {
   val config = ConfigFactory.load()
   val ResumeSupervisionStrategy = ActorAttributes.supervisionStrategy( _ => Resume)
 
-  implicit val actorSystem = ActorSystem("test", config)
-  implicit val executionContext = actorSystem.dispatcher
+  implicit val actorSystem: ActorSystem = ActorSystem("test", config)
+  implicit val executionContext: ExecutionContext = actorSystem.dispatcher
 
   /**
    * When Fleam used Akka 2.5+, the materializer below used to have a supervision policy that was equivalent to
