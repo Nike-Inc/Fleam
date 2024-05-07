@@ -3,8 +3,8 @@
 ![Fleam logo][logo]
 
 Fleam is a library designed to help create disjunctive (Eithers) and more generally monadic streams using
-[Cats](https://github.com/typelevel/cats/tree/master/core/src/main/scala/cats) and [Akka
-Streams](https://doc.akka.io/docs/akka/2.6/stream/).
+[Cats](https://github.com/typelevel/cats/tree/master/core/src/main/scala/cats) and [Pekko
+Streams](https://pekko.apache.org/docs/pekko/current/stream/index.html).
 
 In the disjunctive case this means that as data flows through the stream if it becomes a `Left` it will no longer be
 processed by the disjunctive stages and will pass through continuing further down stream.
@@ -45,7 +45,7 @@ libraryDependencies ++= Seq(
 * `tickingGroupedWithin` - Like a normal `groupedWithin` except will emit an empty Seq after the elapsed `within`
   duration even if nothing has been received.
 * `SerializedByKeyBidi` - a
-  [BidiFlow](https://doc.akka.io/docs/akka/2.5.4/scala/stream/stream-graphs.html#bidirectional-flows) that limits items
+  [BidiFlow](https://pekko.apache.org/docs/pekko/current/stream/stream-graphs.html#bidirectional-flows) that limits items
   by a key to serial processing. For example an items of key `A` will while have to complete processing before another
   item of key `A` will be processed. This helps prevent concurrent operations for a key.
 * `Valve` - Slows processing during failed downstream services instead of failing fast.

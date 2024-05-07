@@ -1,8 +1,8 @@
 package com.nike.fleam
 
 import org.slf4j.LoggerFactory
-import akka.stream._
-import akka.stream.scaladsl._
+import org.apache.pekko.stream._
+import org.apache.pekko.stream.scaladsl._
 import concurrent.{ Future, Promise }
 import scala.concurrent.ExecutionContext
 

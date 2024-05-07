@@ -1,7 +1,7 @@
 package com.nike.fleam
 package sqs
 
-import akka.stream.scaladsl._
+import org.apache.pekko.stream.scaladsl._
 import configuration.SqsProcessingConfiguration
 import com.nike.fleam.configuration.GroupedWithinConfiguration
 import org.scalatest.flatspec.AnyFlatSpec

@@ -1,7 +1,7 @@
 package com.nike.fleam
 package ops
 
-import akka.stream.scaladsl._
+import org.apache.pekko.stream.scaladsl._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.concurrent.ScalaFutures
@@ -24,7 +24,7 @@ class TickingGroupedWithinFlowTest extends AnyFlatSpec with Matchers with ScalaF
 
   it should "tick groups even when no values are passing from a flow" in {
 
-    val flow: Flow[Int, Seq[Int], akka.NotUsed] =
+    val flow: Flow[Int, Seq[Int], org.apache.pekko.NotUsed] =
       Flow[Int]
         .tickingGroupedWithin(batchSize = 100, within = 100.millis)
 

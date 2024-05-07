@@ -1,7 +1,7 @@
 package com.nike.fleam.ops
 
-import akka.stream._
-import akka.stream.scaladsl._
+import org.apache.pekko.stream._
+import org.apache.pekko.stream.scaladsl._
 import scala.concurrent.duration._
 import scala.language.implicitConversions
 
@@ -13,15 +13,15 @@ import scala.language.implicitConversions
  **/
 
 trait TickingGroupedWithinSourceOps {
-  implicit def tickingGroupedWithinSourceOps[Out](source: Graph[SourceShape[Out], akka.NotUsed]): TickingGroupedWithinSource[Out] =
+  implicit def tickingGroupedWithinSourceOps[Out](source: Graph[SourceShape[Out], org.apache.pekko.NotUsed]): TickingGroupedWithinSource[Out] =
     new TickingGroupedWithinSource(source)
 }
 
 object TickingGroupedWithinSourceOps extends TickingGroupedWithinSourceOps
 
-class TickingGroupedWithinSource[Out](val source: Graph[SourceShape[Out], akka.NotUsed]) extends AnyVal {
+class TickingGroupedWithinSource[Out](val source: Graph[SourceShape[Out], org.apache.pekko.NotUsed]) extends AnyVal {
   /** A form of groupedWithin that emits empty Seqs even if no items have passed through within the allotted time. */
-  def tickingGroupedWithin(batchSize: Int, within: FiniteDuration): Source[Seq[Out], akka.NotUsed] = Source.fromGraph {
+  def tickingGroupedWithin(batchSize: Int, within: FiniteDuration): Source[Seq[Out], org.apache.pekko.NotUsed] = Source.fromGraph {
     GraphDSL.create() { implicit builder =>
       import GraphDSL.Implicits._
       val tickSource = builder.add(

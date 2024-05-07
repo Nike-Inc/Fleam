@@ -3,7 +3,7 @@ package sqs
 
 import java.util
 
-import akka.stream.scaladsl._
+import org.apache.pekko.stream.scaladsl._
 import software.amazon.awssdk.services.sqs.model._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec

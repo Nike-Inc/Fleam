@@ -1,8 +1,8 @@
 package com.nike.fleam.sqs
 package ops
 
-import akka.stream._
-import akka.stream.scaladsl._
+import org.apache.pekko.stream._
+import org.apache.pekko.stream.scaladsl._
 import software.amazon.awssdk.services.sqs.model.Message
 import java.time.Instant
 import scala.language.implicitConversions

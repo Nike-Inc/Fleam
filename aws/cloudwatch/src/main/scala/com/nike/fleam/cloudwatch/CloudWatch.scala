@@ -1,6 +1,6 @@
 package com.nike.fleam.cloudwatch
 
-import akka.stream.scaladsl.Flow
+import org.apache.pekko.stream.scaladsl.Flow
 import com.nike.fleam.configuration.GroupedWithinConfiguration
 import com.nike.fleam.logging.{Counter, Counters, MetricsLogger}
 import software.amazon.awssdk.services.cloudwatch.CloudWatchAsyncClient
@@ -82,7 +82,7 @@ object CloudWatch {
       List(CloudWatch.withInstanceId(Option(EC2MetadataUtils.getInstanceId).getOrElse("missing"))),
     filter: T => Boolean = (_: T) => true,
     now: () => Instant = () => Instant.now())(metricName: String)(implicit ec: ExecutionContext)
-    : Flow[T, T, akka.NotUsed] =
+    : Flow[T, T, org.apache.pekko.NotUsed] =
     CloudWatch
       .metricsLogger(send = wrapRequest(awsClient.putMetricData))
       .logCount(filter) { new Counter[T, PutMetricDataRequest] {

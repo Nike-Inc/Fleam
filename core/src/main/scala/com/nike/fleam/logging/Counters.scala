@@ -3,8 +3,8 @@ package logging
 
 import configuration._
 
-import akka.stream._
-import akka.stream.scaladsl._
+import org.apache.pekko.stream._
+import org.apache.pekko.stream.scaladsl._
 
 /** Copyright 2020-present, Nike, Inc.
  * All rights reserved.
@@ -14,7 +14,7 @@ import akka.stream.scaladsl._
  **/
 
 object Counters {
-  def countWithin[T](config: GroupedWithinConfiguration): Flow[T, Int, akka.NotUsed] =
+  def countWithin[T](config: GroupedWithinConfiguration): Flow[T, Int, org.apache.pekko.NotUsed] =
     config.toTickingGroupedWithin.map(_.length)
 
   /** Count both sides of an Either independently
@@ -31,7 +31,7 @@ object Counters {
   def countEither[In <: Either[_, _], Out](
       config: GroupedWithinConfiguration)(
       leftMessage: Int => Out,
-      rightMessage: Int => Out): Flow[In, Out, akka.NotUsed] = Flow.fromGraph {
+      rightMessage: Int => Out): Flow[In, Out, org.apache.pekko.NotUsed] = Flow.fromGraph {
     GraphDSL.create() { implicit builder =>
       import GraphDSL.Implicits._
       val broadcast = builder.add(Broadcast[In](2))
@@ -54,5 +54,5 @@ object Counters {
 }
 
 trait Counter[T, U] {
-  def flow: Flow[T, U, akka.NotUsed]
+  def flow: Flow[T, U, org.apache.pekko.NotUsed]
 }

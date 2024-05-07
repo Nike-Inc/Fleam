@@ -75,9 +75,9 @@ time-stamp your message that will produce a `RetrievedMessage` which is just the
 import software.amazon.awssdk.services.sqs.model.Message
 import com.nike.fleam.sqs._
 import com.nike.fleam.sqs.implicits._
-import akka.stream.scaladsl.Flow
+import org.apache.pekko.stream.scaladsl.Flow
 
-val flow: Flow[Message, RetrievedMessage, akka.NotUsed] = {
+val flow: Flow[Message, RetrievedMessage, org.apache.pekko.NotUsed] = {
   Flow[Message]
     .timestampMessage()
 }
@@ -180,7 +180,7 @@ val retryPolicy: PartialFunction[Item, Map[String, MessageAttributeValue]] = {
   case item if item.foo == "Failed!" => Map("foo" -> MessageAttributeValue.builder().stringValue("Failed to foo!").build())
 }
 
-val retryFlow: Flow[Item, Either[SqsRetryError[Item], Item], akka.NotUsed] = sqsRetry.flow(retryPolicy)
+val retryFlow: Flow[Item, Either[SqsRetryError[Item], Item], org.apache.pekko.NotUsed] = sqsRetry.flow(retryPolicy)
 ```
 
 If you see a error message similar to `error: could not find implicit value for evidence parameter of type
@@ -194,7 +194,7 @@ that didn't need to be retried or dead-lettered.
 Now that we have our retry flow we can use it wherever appropriate.
 
 ```scala mdoc:silent
-import akka.stream.scaladsl.Source
+import org.apache.pekko.stream.scaladsl.Source
 
   {
     Source(List.empty[Item])

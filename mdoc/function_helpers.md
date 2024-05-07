@@ -15,7 +15,7 @@ val fetchData: Int => Future[String] = { (number) =>
 
 We might need to create a flow to be used in a graph and create the following code.
 ```scala mdoc:silent
-import akka.stream.scaladsl._
+import org.apache.pekko.stream.scaladsl._
 
 def flowVersion(parallelism: Int): Flow[Int, String, _] = {
   Flow[Int]

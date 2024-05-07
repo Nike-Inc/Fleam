@@ -1,8 +1,8 @@
 package com.nike.fleam
 
-import akka.stream.stage._
-import akka.stream.{Attributes, BidiShape, Inlet, Outlet}
-import akka.stream.scaladsl.BidiFlow
+import org.apache.pekko.stream.stage._
+import org.apache.pekko.stream.{Attributes, BidiShape, Inlet, Outlet}
+import org.apache.pekko.stream.scaladsl.BidiFlow
 import scala.concurrent.duration._
 import java.time.Instant
 
@@ -75,7 +75,7 @@ object SerializedByKeyBidi {
     bufferSize: Int,
     expiration: FiniteDuration,
     expirationInterval: FiniteDuration,
-    now: () => Instant = () => Instant.now): BidiFlow[In, In, Out, Out, akka.NotUsed] =
+    now: () => Instant = () => Instant.now): BidiFlow[In, In, Out, Out, org.apache.pekko.NotUsed] =
       BidiFlow.fromGraph(new SerializedByKeyBidi(queueBuffer(bufferSize, expiration), expirationInterval, now))
 }
 
@@ -97,14 +97,14 @@ object SerializedByKeyBidi {
  *  implicit val databaseKeyed: Keyed[DatabaseUpdate, String] = Keyed.lift[DatabaseUpdate, String](_.id)
  *  implicit val updatedKeyed: Keyed[Updated, String] = Keyed.lift[Updated, String](_.id)
  *
- *  val updateFlow: Flow[DatabaseUpdate, Updated, akka.NotUsed] = Flow[DatabaseUpdate].mapAsync(10) { ??? }
+ *  val updateFlow: Flow[DatabaseUpdate, Updated, org.apache.pekko.NotUsed] = Flow[DatabaseUpdate].mapAsync(10) { ??? }
  *
  *  val serializedByKey = new SerializedByKeyBidi(
  *    buffer = SerializedByKeyBidi.queueBuffer(size = 10, lockDuration = 1.seconds)
  *    experiationInterval = 500.millis
  *  )
  *
- *  val nonConcurrentUpdatesByKey: Flow[DatabaseUpdate, Updated, akka.NotUsed] = serializedByKey.join(updateFlow)
+ *  val nonConcurrentUpdatesByKey: Flow[DatabaseUpdate, Updated, org.apache.pekko.NotUsed] = serializedByKey.join(updateFlow)
  *  }}}
  */
 class SerializedByKeyBidi[Key, In : Keyed[*, Key], Out : Keyed[*, Key]](

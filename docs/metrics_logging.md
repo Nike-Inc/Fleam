@@ -8,7 +8,7 @@ Before we get into configuring our loggers, let's look at how we use one. So let
 but log how many items are going through it. Here you can see that a logger is nothing more than a flow that takes in
 some type and passes that type through.
 ```scala
-import akka.stream.scaladsl._
+import org.apache.pekko.stream.scaladsl._
 case class Item()
 
 class Pipeline(logger: Flow[Item, Item, _]) {
@@ -34,7 +34,7 @@ val textLogger = TextLogging(LoggerFactory.getLogger("Example").info)
 If we tried to use our `textLogger` now we'd run into some trouble.
 ```scala
 val pipeline1 = new Pipeline(textLogger.logCount[Item])
-// error: could not find implicit value for parameter f: com.nike.fleam.logging.Counter[repl.Session.App.Item,com.nike.fleam.logging.LogMessage]
+// error: could not find implicit value for parameter f: com.nike.fleam.logging.Counter[repl.MdocSession.MdocApp.Item,com.nike.fleam.logging.LogMessage]
 // val pipeline1 = new Pipeline(textLogger.logCount[Item])
 //                              ^^^^^^^^^^^^^^^^^^^^^^^^^
 ```

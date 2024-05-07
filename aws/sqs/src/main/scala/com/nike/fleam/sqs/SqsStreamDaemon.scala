@@ -1,8 +1,8 @@
 package com.nike.fleam
 package sqs
 
-import akka.stream.{Materializer, FlowShape, Graph, UniqueKillSwitch}
-import akka.stream.scaladsl._
+import org.apache.pekko.stream.{Materializer, FlowShape, Graph, UniqueKillSwitch}
+import org.apache.pekko.stream.scaladsl._
 import configuration.SqsQueueProcessingConfiguration
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.sqs.SqsAsyncClient
@@ -24,12 +24,12 @@ object SqsStreamDaemon {
   def apply(
       name: String,
       sqsConfig: SqsQueueProcessingConfiguration,
-      pipeline: Graph[FlowShape[Message, Message], akka.NotUsed],
-      batchDeleteResults: Graph[FlowShape[BatchResult[Message], BatchResult[Message]], akka.NotUsed] =
+      pipeline: Graph[FlowShape[Message, Message], org.apache.pekko.NotUsed],
+      batchDeleteResults: Graph[FlowShape[BatchResult[Message], BatchResult[Message]], org.apache.pekko.NotUsed] =
         Flow[BatchResult[Message]]
     )(implicit
       ec: ExecutionContext
-    ): SimplifiedStreamDeamon[akka.Done] = apply(
+    ): SimplifiedStreamDeamon[org.apache.pekko.Done] = apply(
     name = name,
     sqsConfig = sqsConfig,
     pipeline = pipeline,
@@ -42,15 +42,15 @@ object SqsStreamDaemon {
       sqsConfig: SqsQueueProcessingConfiguration,
       pipeline: Graph[FlowShape[Message, Message], Mat],
       client: SqsAsyncClient,
-      batchDeleteResults: Graph[FlowShape[BatchResult[Message], BatchResult[Message]], akka.NotUsed]
+      batchDeleteResults: Graph[FlowShape[BatchResult[Message], BatchResult[Message]], org.apache.pekko.NotUsed]
     )(implicit
       ec: ExecutionContext
-    ): SimplifiedStreamDeamon[akka.Done] = new SimplifiedStreamDeamon[akka.Done] {
+    ): SimplifiedStreamDeamon[org.apache.pekko.Done] = new SimplifiedStreamDeamon[org.apache.pekko.Done] {
 
     val daemon = new StreamDaemon(name)
 
     val source = SqsSource(client).forQueue(sqsConfig)
-    val sink: Sink[Message, Future[akka.Done]] =
+    val sink: Sink[Message, Future[org.apache.pekko.Done]] =
       SqsDelete(client).forQueue(sqsConfig.queue.url)
         .toFlow[Message](sqsConfig.delete)
         .via(batchDeleteResults)
@@ -58,7 +58,7 @@ object SqsStreamDaemon {
 
 
     def start(implicit materializer: Materializer) =
-      daemon.start[Message, Message, UniqueKillSwitch, Mat, akka.Done](source, pipeline, sink)
+      daemon.start[Message, Message, UniqueKillSwitch, Mat, org.apache.pekko.Done](source, pipeline, sink)
 
     def stop(): Future[Unit] = daemon.stop()
   }

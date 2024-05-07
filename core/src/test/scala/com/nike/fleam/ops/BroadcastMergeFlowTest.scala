@@ -1,7 +1,7 @@
 package com.nike.fleam
 package ops
 
-import akka.stream.scaladsl._
+import org.apache.pekko.stream.scaladsl._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.concurrent.ScalaFutures
@@ -19,9 +19,9 @@ class BroadcastMergeFlowTest extends AnyFlatSpec with Matchers with ScalaFutures
   import TestTools._
 
   it should "broadcastMerge a Flow" in {
-    val double: Flow[Int, Double, akka.NotUsed] = Flow[Int].map(_ * 2.0)
-    val halve: Flow[Int, Double, akka.NotUsed] = Flow[Int].map(_ / 2.0)
-    val squareRoot: Flow[Int, Double, akka.NotUsed] = Flow[Int].map(Math.sqrt(_))
+    val double: Flow[Int, Double, org.apache.pekko.NotUsed] = Flow[Int].map(_ * 2.0)
+    val halve: Flow[Int, Double, org.apache.pekko.NotUsed] = Flow[Int].map(_ / 2.0)
+    val squareRoot: Flow[Int, Double, org.apache.pekko.NotUsed] = Flow[Int].map(Math.sqrt(_))
 
     val flow = Flow[Int].broadcastMerge(double, halve, squareRoot)
     val results = Source.single(10).via(flow).runWith(Sink.seq)

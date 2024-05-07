@@ -1,7 +1,7 @@
 package com.nike.fleam
 package sqs
 
-import akka.stream.scaladsl.Flow
+import org.apache.pekko.stream.scaladsl.Flow
 import software.amazon.awssdk.services.sqs.SqsAsyncClient
 import software.amazon.awssdk.services.sqs.model._
 import com.nike.fleam.sqs.configuration.{Default, SqsProcessingConfiguration}
@@ -69,7 +69,7 @@ class SqsEnqueue(
       enqueueMessage(request)
     }
     def asFlow[T: ToMessage](sqsProcessing: SqsProcessingConfiguration = Default.Sqs.enqueueConfig)
-      (implicit ec: ExecutionContext): Flow[T, (List[T], SendMessageBatchResponse), akka.NotUsed] =
+      (implicit ec: ExecutionContext): Flow[T, (List[T], SendMessageBatchResponse), org.apache.pekko.NotUsed] =
       Flow[T]
         .via(sqsProcessing.groupedWithin.toFlow)
         .mapAsync(sqsProcessing.parallelism) { ts =>

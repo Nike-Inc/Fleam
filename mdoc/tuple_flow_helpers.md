@@ -28,14 +28,14 @@ We can use fleam's mapRight function to make converting the numbers easier in a 
 need to be aware of the tuple and the flow only needs minimal boiler-plate for just working with the right side.
 
 ```scala mdoc:invisible
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 
 implicit val actorSystem: ActorSystem = ActorSystem("tut")
 import actorSystem.dispatcher
 ```
 
 ```scala mdoc:silent
-import akka.stream.scaladsl._
+import org.apache.pekko.stream.scaladsl._
 import com.nike.fleam.implicits._
 import concurrent.Future
 

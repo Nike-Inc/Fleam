@@ -1,7 +1,7 @@
 package com.nike.fleam
 package ops
 
-import akka.stream.scaladsl._
+import org.apache.pekko.stream.scaladsl._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.concurrent.ScalaFutures
@@ -19,8 +19,8 @@ class BiViaFlowTest extends AnyFlatSpec with Matchers with ScalaFutures {
   import TestTools._
 
   it should "biVia an Either Flow" in {
-    val double: Flow[Int, Int, akka.NotUsed] = Flow[Int].map(_ * 2)
-    val upperCase: Flow[String, String, akka.NotUsed] = Flow[String].map(_.toUpperCase)
+    val double: Flow[Int, Int, org.apache.pekko.NotUsed] = Flow[Int].map(_ * 2)
+    val upperCase: Flow[String, String, org.apache.pekko.NotUsed] = Flow[String].map(_.toUpperCase)
 
     val flow = Flow[Either[Int, String]].biVia(double, upperCase)
 
@@ -33,7 +33,7 @@ class BiViaFlowTest extends AnyFlatSpec with Matchers with ScalaFutures {
 
 
   it should "viaRight an Either Flow" in {
-    val upperCase: Flow[String, String, akka.NotUsed] = Flow[String].map(_.toUpperCase)
+    val upperCase: Flow[String, String, org.apache.pekko.NotUsed] = Flow[String].map(_.toUpperCase)
 
     val flow = Flow[Either[Int, String]].viaRight(upperCase)
 
@@ -45,7 +45,7 @@ class BiViaFlowTest extends AnyFlatSpec with Matchers with ScalaFutures {
   }
 
   it should "viaLeft an Either Flow" in {
-    val double: Flow[Int, Int, akka.NotUsed] = Flow[Int].map(_ * 2)
+    val double: Flow[Int, Int, org.apache.pekko.NotUsed] = Flow[Int].map(_ * 2)
 
     val flow = Flow[Either[Int, String]].viaLeft(double)
 

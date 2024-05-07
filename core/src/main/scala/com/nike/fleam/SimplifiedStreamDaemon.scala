@@ -1,6 +1,6 @@
 package com.nike.fleam
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import scala.concurrent.Future
 
 /** Copyright 2020-present, Nike, Inc.

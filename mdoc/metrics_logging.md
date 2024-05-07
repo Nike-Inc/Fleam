@@ -8,7 +8,7 @@ Before we get into configuring our loggers, let's look at how we use one. So let
 but log how many items are going through it. Here you can see that a logger is nothing more than a flow that takes in
 some type and passes that type through.
 ```scala mdoc:silent
-import akka.stream.scaladsl._
+import org.apache.pekko.stream.scaladsl._
 case class Item()
 
 class Pipeline(logger: Flow[Item, Item, _]) {

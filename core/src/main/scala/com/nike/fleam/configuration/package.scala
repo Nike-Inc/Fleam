@@ -1,9 +1,9 @@
 package com.nike.fleam
 
 import scala.concurrent.duration._
-import akka.pattern.CircuitBreaker
-import akka.stream.scaladsl.Flow
-import akka.actor.ActorSystem
+import org.apache.pekko.pattern.CircuitBreaker
+import org.apache.pekko.stream.scaladsl.Flow
+import org.apache.pekko.actor.ActorSystem
 import ops.TickingGroupedWithinFlowOps._
 
 /** Copyright 2020-present, Nike, Inc.

@@ -1,8 +1,8 @@
 package com.nike.fleam
 
-import akka.actor.ActorSystem
-import akka.stream.ThrottleMode
-import akka.stream.scaladsl._
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.ThrottleMode
+import org.apache.pekko.stream.scaladsl._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.concurrent.ScalaFutures

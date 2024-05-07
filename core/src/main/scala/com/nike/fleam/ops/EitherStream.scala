@@ -1,8 +1,8 @@
 package com.nike.fleam
 package ops
 
-import akka.stream.{Graph, SourceShape}
-import akka.stream.scaladsl._
+import org.apache.pekko.stream.{Graph, SourceShape}
+import org.apache.pekko.stream.scaladsl._
 import cats._
 import cats.implicits._
 import scala.concurrent.Future
@@ -66,7 +66,7 @@ trait EitherStream[S[_], L, R] {
     leftFixed.mFlatMapAsync(stream)(parallelism)(f)
 
   /** Takes a function from `Either[L, R]` that creats a Source of eithers to be introduced into the stream. */
-  def flatMapConcat[L1, R1](stream: S[Either[L, R]])(f: Either[L, R] => Graph[SourceShape[Either[L1, R1]], akka.NotUsed]): S[Either[L1, R1]] =
+  def flatMapConcat[L1, R1](stream: S[Either[L, R]])(f: Either[L, R] => Graph[SourceShape[Either[L1, R1]], org.apache.pekko.NotUsed]): S[Either[L1, R1]] =
     unfixed.flatMapConcat(stream)(f)
 
   /** Takes a function from `T => Future[Either[L, R]]` and lifts it into an unordered async flow that takes `Either[L, T]` and returns
@@ -143,7 +143,7 @@ object EitherStream {
         (implicit ec: ExecutionContext): S[Either[L, R1]] =
       typeClassInstance.eitherFlatMapAsync(self)(parallelism)(f)(ec)
 
-    def flatMapConcat[L1, R1](f: Either[L, R] => Graph[SourceShape[Either[L1, R1]], akka.NotUsed]): S[Either[L1, R1]] =
+    def flatMapConcat[L1, R1](f: Either[L, R] => Graph[SourceShape[Either[L1, R1]], org.apache.pekko.NotUsed]): S[Either[L1, R1]] =
       typeClassInstance.flatMapConcat(self)(f)
 
     def eitherFlatMapAsyncUnordered[R1]

@@ -3,7 +3,7 @@ package sqs
 
 import java.time.Instant
 
-import akka.stream.scaladsl.Flow
+import org.apache.pekko.stream.scaladsl.Flow
 import cats.data._
 import cats.implicits._
 import software.amazon.awssdk.services.sqs.SqsAsyncClient
@@ -46,7 +46,7 @@ object SqsRetry {
   val emptyAttributes = Map.empty[String, MessageAttributeValue]
 
   type RetryResult[T] = Either[SqsRetryError[T], T]
-  type RetryFlow[T] = Flow[T, RetryResult[T], akka.NotUsed]
+  type RetryFlow[T] = Flow[T, RetryResult[T], org.apache.pekko.NotUsed]
 
   implicit val messageToMessage: ToMessage[Message] = ToMessage.lift(identity)
 
@@ -116,7 +116,7 @@ class SqsRetry(
       deadLetter: PartialFunction[In, Map[String, MessageAttributeValue]] = PartialFunction.empty,
       attributesModifier: Map[MessageSystemAttributeName, String] => Map[MessageSystemAttributeName, String] = identity,
       retryCountOverrides: PartialFunction[In, Int] = PartialFunction.empty)
-      (implicit ec: ExecutionContext): Flow[In, Either[SqsRetryError[In], In], akka.NotUsed] = {
+      (implicit ec: ExecutionContext): Flow[In, Either[SqsRetryError[In], In], org.apache.pekko.NotUsed] = {
 
     sealed trait Result
     case class Ok(in: In) extends Result
