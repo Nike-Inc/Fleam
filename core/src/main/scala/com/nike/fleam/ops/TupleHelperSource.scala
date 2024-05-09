@@ -1,7 +1,7 @@
 package com.nike.fleam.ops
 
-import akka.stream._
-import akka.stream.scaladsl._
+import org.apache.pekko.stream._
+import org.apache.pekko.stream.scaladsl._
 import scala.language.implicitConversions
 
 /** Copyright 2020-present, Nike, Inc.

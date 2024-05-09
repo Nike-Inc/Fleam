@@ -1,6 +1,6 @@
 package com.nike.fleam
 
-import akka.stream.scaladsl._
+import org.apache.pekko.stream.scaladsl._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.concurrent.ScalaFutures
@@ -37,7 +37,7 @@ class SerializedByKeyBidiTest extends AnyFlatSpec with Matchers with ScalaFuture
     val flow =
       Flow[Example]
         .mapAsyncUnordered(20) { example =>
-          akka.pattern.after(example.delay.milliseconds, actorSystem.scheduler)(Future.successful(example))
+          org.apache.pekko.pattern.after(example.delay.milliseconds, actorSystem.scheduler)(Future.successful(example))
         }
 
     val result = Source.single(example)
@@ -66,7 +66,7 @@ class SerializedByKeyBidiTest extends AnyFlatSpec with Matchers with ScalaFuture
     val flow =
       Flow[Example]
         .mapAsyncUnordered(20) { example =>
-          akka.pattern.after(example.delay.milliseconds, actorSystem.scheduler)(Future.successful(example))
+          org.apache.pekko.pattern.after(example.delay.milliseconds, actorSystem.scheduler)(Future.successful(example))
         }
 
     val result = Source(examples)
@@ -113,7 +113,7 @@ class SerializedByKeyBidiTest extends AnyFlatSpec with Matchers with ScalaFuture
     val flow =
       Flow[Example]
         .mapAsyncUnordered(10) { example =>
-          akka.pattern.after(example.delay.milliseconds, actorSystem.scheduler)( Future {
+          org.apache.pekko.pattern.after(example.delay.milliseconds, actorSystem.scheduler)( Future {
             if (example.fail) throw new Exception() else example
           })
         }

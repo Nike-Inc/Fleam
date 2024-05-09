@@ -3,8 +3,8 @@ package sqs
 
 import com.nike.fleam.configuration._
 import sqs.configuration._
-import akka.stream.scaladsl._
-import akka.stream.{KillSwitches, ThrottleMode, UniqueKillSwitch}
+import org.apache.pekko.stream.scaladsl._
+import org.apache.pekko.stream.{KillSwitches, ThrottleMode, UniqueKillSwitch}
 import software.amazon.awssdk.services.sqs.SqsAsyncClient
 import software.amazon.awssdk.services.sqs.model._
 import com.nike.fawcett.sqs._

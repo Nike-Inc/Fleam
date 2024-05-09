@@ -1,8 +1,8 @@
 package com.nike.fleam
 package ops
 
-import akka.stream.{Graph, SourceShape}
-import akka.stream.scaladsl._
+import org.apache.pekko.stream.{Graph, SourceShape}
+import org.apache.pekko.stream.scaladsl._
 import cats._
 import cats.implicits._
 import scala.concurrent.{ExecutionContext, Future}
@@ -19,7 +19,7 @@ trait Stream[S[_], M[_], A] {
   def map[B](stream: S[M[A]])(f: M[A] => M[B]): S[M[B]]
   def mapAsync[B](stream: S[M[A]])(parallelism: Int)(f: M[A] => Future[M[B]]): S[M[B]]
   def mapAsyncUnordered[B](stream: S[M[A]])(parallelism: Int)(f: M[A] => Future[M[B]]): S[M[B]]
-  def flatMapConcat[B](stream: S[M[A]])(f: M[A] => Graph[SourceShape[M[B]], akka.NotUsed]): S[M[B]]
+  def flatMapConcat[B](stream: S[M[A]])(f: M[A] => Graph[SourceShape[M[B]], org.apache.pekko.NotUsed]): S[M[B]]
   def collect[B](stream: S[M[A]])(f: PartialFunction[M[A], M[B]]): S[M[B]]
 
   def mMap[B](stream: S[M[A]])(f: A => B)(implicit weakMonad: FlatMap[M]): S[M[B]] =
@@ -66,7 +66,7 @@ object Stream {
     def map[B](f: M[A] => M[B]): S[M[B]] = typeClassInstance.map(self)(f)
     def mapAsync[B](parallelism: Int)(f: M[A] => Future[M[B]]): S[M[B]] = typeClassInstance.mapAsync(self)(parallelism)(f)
     def mapAsyncUnordered[B](parallelism: Int)(f: M[A] => Future[M[B]]): S[M[B]] = typeClassInstance.mapAsyncUnordered(self)(parallelism)(f)
-    def flatMapConcat[B](f: M[A] => Graph[SourceShape[M[B]], akka.NotUsed]): S[M[B]] = typeClassInstance.flatMapConcat(self)(f)
+    def flatMapConcat[B](f: M[A] => Graph[SourceShape[M[B]], org.apache.pekko.NotUsed]): S[M[B]] = typeClassInstance.flatMapConcat(self)(f)
     def collect[B](f: PartialFunction[M[A], M[B]]): S[M[B]] = typeClassInstance.collect(self)(f)
     def mMap[B](f: A => B)(implicit weakMonad: FlatMap[M]): S[M[B]] = typeClassInstance.mMap(self)(f)(weakMonad)
     def mFlatMap[B](f: A => M[B])(implicit weakMonad: FlatMap[M]): S[M[B]] = typeClassInstance.mFlatMap(self)(f)(weakMonad)
@@ -87,7 +87,7 @@ object Stream {
         flow.mapAsync(parallelism)(f)
       def mapAsyncUnordered[B](flow: Flow[In, M[A], Mat])(parallelism: Int)(f: M[A] => Future[M[B]]): Flow[In, M[B], Mat] =
         flow.mapAsyncUnordered(parallelism)(f)
-      def flatMapConcat[B](flow: Flow[In, M[A], Mat])(f: M[A] => Graph[SourceShape[M[B]], akka.NotUsed]): Flow[In, M[B], Mat] =
+      def flatMapConcat[B](flow: Flow[In, M[A], Mat])(f: M[A] => Graph[SourceShape[M[B]], org.apache.pekko.NotUsed]): Flow[In, M[B], Mat] =
         flow.flatMapConcat(f)
       def collect[B](flow: Flow[In, M[A], Mat])(f: PartialFunction[M[A], M[B]]): Flow[In, M[B], Mat] =
         flow.collect(f)
@@ -99,7 +99,7 @@ object Stream {
         source.mapAsync(parallelism)(f)
       def mapAsyncUnordered[B](source: Source[M[A], Mat])(parallelism: Int)(f: M[A] => Future[M[B]]): Source[M[B], Mat] =
         source.mapAsyncUnordered(parallelism)(f)
-      def flatMapConcat[B](source: Source[M[A], Mat])(f: M[A] => Graph[SourceShape[M[B]], akka.NotUsed]): Source[M[B], Mat] =
+      def flatMapConcat[B](source: Source[M[A], Mat])(f: M[A] => Graph[SourceShape[M[B]], org.apache.pekko.NotUsed]): Source[M[B], Mat] =
         source.flatMapConcat(f)
       def collect[B](source: Source[M[A], Mat])(f: PartialFunction[M[A], M[B]]): Source[M[B], Mat] =
         source.collect(f)

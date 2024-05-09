@@ -1,8 +1,8 @@
 package com.nike.fleam
 
-import akka.actor.ActorSystem
-import akka.stream.{ActorAttributes, Materializer}
-import akka.stream.Supervision.Resume
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.{ActorAttributes, Materializer}
+import org.apache.pekko.stream.Supervision.Resume
 import com.typesafe.config.ConfigFactory
 
 import scala.concurrent.{Future, ExecutionContext, Promise}

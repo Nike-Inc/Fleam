@@ -1,24 +1,26 @@
 import ReleaseTransformations._
 
-val currentScalaVersion = "2.13.11"
+val currentScalaVersion = "2.13.14"
 val scalaVersions = Seq("2.12.17", currentScalaVersion)
-val awsVersion = "2.20.79"
-val akkaVersion = "2.6.20"
-val catsCore = "org.typelevel" %% "cats-core" % "2.9.0"
+val awsVersion = "2.25.46"
+val pekkoVersion = "1.0.2"
+val catsCore = "org.typelevel" %% "cats-core" % "2.10.0"
 
 val checkEvictionsTask = taskKey[Unit]("Task that fails build if there are evictions")
 
 lazy val depOverrides = Seq(
   "org.slf4j" % "slf4j-api" % "1.7.36",
   "org.slf4j" % "jcl-over-slf4j" % "1.7.36",
-  "io.netty" % "netty-codec-http" % "4.1.86.Final",
-  "io.netty" % "netty-handler" % "4.1.86.Final",
-  "com.typesafe" % "config" % "1.4.2",
+  "io.netty" % "netty-codec-http" % "4.1.108.Final",
+  "io.netty" % "netty-handler" % "4.1.108.Final",
+  "commons-codec" % "commons-codec" % "1.15",
+  "com.typesafe" % "config" % "1.4.3",
+  "software.amazon.awssdk" % "sqs" % awsVersion,
   catsCore
 )
 
 lazy val commonSettings = Seq(
-  addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.2" cross CrossVersion.full),
+  addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.3" cross CrossVersion.full),
   scalaVersion := currentScalaVersion,
   crossScalaVersions := scalaVersions,
   scalacOptions ++= (CrossVersion.partialVersion(scalaVersion.value) match {
@@ -29,7 +31,7 @@ lazy val commonSettings = Seq(
     case Some((2, minor)) if minor >= 13 => Nil
     case _ => Seq(
         compilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full),
-        "org.scala-lang.modules" % "scala-java8-compat_2.12" % "0.9.1")
+        "org.scala-lang.modules" % "scala-java8-compat_2.12" % "1.0.2")
   }),
   dependencyOverrides ++= (CrossVersion.partialVersion(scalaVersion.value) match {
     case Some((2, minor)) if minor >= 13 => Seq(
@@ -39,9 +41,9 @@ lazy val commonSettings = Seq(
   libraryDependencies ++= Seq(
     "org.slf4j" % "slf4j-api" % "1.7.30",
     "org.slf4j" % "jcl-over-slf4j" % "1.7.30" % Test,
-    "ch.qos.logback" % "logback-classic" % "1.2.12" % Test,
-    "com.vladsch.flexmark" % "flexmark-all" % "0.35.10" % Test,
-    "org.scalatest" %% "scalatest" % "3.1.0" % Test),
+    "ch.qos.logback" % "logback-classic" % "1.2.13" % Test,
+    "com.vladsch.flexmark" % "flexmark-all" % "0.64.8" % Test,
+    "org.scalatest" %% "scalatest" % "3.2.18" % Test),
   dependencyOverrides ++= depOverrides,
   Compile / console / scalacOptions ~=
     (_ filterNot Set("-Xfatal-warnings", "-Xlint", "-Ywarn-unused-import")),
@@ -115,14 +117,14 @@ lazy val core = (project in file("./core"))
   .settings(coverageSettings)
   .settings(
     name := "fleam",
-    description := "Disjunctive and monadic stream processing with cats and akka-streams",
+    description := "Disjunctive and monadic stream processing with cats and pekko-streams",
     libraryDependencies ++= Seq(
-      "com.typesafe.akka" %% "akka-stream" % akkaVersion,
-      "com.typesafe.akka" %% "akka-actor" % akkaVersion,
-      "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
+      "org.apache.pekko" %% "pekko-stream" % pekkoVersion,
+      "org.apache.pekko" %% "pekko-actor" % pekkoVersion,
+      "org.apache.pekko" %% "pekko-slf4j" % pekkoVersion,
       catsCore,
       "org.typelevel" %% "simulacrum" % "1.0.1",
-      "org.typelevel" %% "discipline-core" % "1.5.1" % Test
+      "org.typelevel" %% "discipline-core" % "1.7.0" % Test
     ),
     coverageExcludedPackages := "")
 
@@ -160,8 +162,7 @@ lazy val docs = (project in file("./mdoc"))
     mdocOut := file("./docs"))
   .settings(
     libraryDependencies ++= Seq(
-      "org.scalameta" %% "mdoc" % "2.1.1",
-      "org.json4s" %% "json4s-jackson" % "3.6.12",
+      "org.json4s" %% "json4s-jackson" % "4.0.7",
       "com.iheart" %% "ficus" % "1.5.2"
     ),
     publish := (()),
@@ -172,12 +173,14 @@ lazy val docs = (project in file("./mdoc"))
       "com.fasterxml.jackson.core" % "jackson-core" % "2.6.7",
       "com.fasterxml.jackson.core" % "jackson-databind" % "2.6.7.3",
       "com.typesafe" % "config" % "1.4.2",
+      "net.java.dev.jna" % "jna" % "5.14.0",
       "org.jboss.logging" % "jboss-logging" % "3.4.0.Final",
-      "org.wildfly.common" % "wildfly-common" % "1.5.2.Final",
-      "org.jboss.xnio" % "xnio-nio" % "3.7.7.Final",
+      "org.jboss.threads" % "jboss-threads" % "3.1.0.Final",
       "org.jboss.xnio" % "xnio-api" % "3.7.7.Final",
+      "org.jboss.xnio" % "xnio-nio" % "3.7.7.Final",
       "org.jsoup" % "jsoup" % "1.10.2",
       "org.slf4j" % "slf4j-api" % "1.8.0-beta4",
+      "org.wildfly.common" % "wildfly-common" % "1.5.2.Final",
     ))
 
 lazy val fleam = (project in file("."))

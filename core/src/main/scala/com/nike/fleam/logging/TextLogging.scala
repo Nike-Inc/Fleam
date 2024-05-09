@@ -2,7 +2,7 @@ package com.nike.fleam
 package logging
 
 import configuration.GroupedWithinConfiguration
-import akka.stream.scaladsl.Flow
+import org.apache.pekko.stream.scaladsl.Flow
 import scala.concurrent.{ Future, ExecutionContext }
 
 /** Copyright 2020-present, Nike, Inc.
@@ -34,10 +34,10 @@ object TextLogging {
   def logCount[T](
       logger: String => Unit,
       config: GroupedWithinConfiguration,
-      filter: T => Boolean = (_: T) => true)(message: Int => String)(implicit ec: ExecutionContext): Flow[T, T, akka.NotUsed] =
+      filter: T => Boolean = (_: T) => true)(message: Int => String)(implicit ec: ExecutionContext): Flow[T, T, org.apache.pekko.NotUsed] =
     metricsLogger(logger).logCount(filter) {
       new Counter[T, LogMessage] {
-        val flow: Flow[T, LogMessage, akka.NotUsed] = Counters.countWithin(config).map(count => LogMessage(message(count)))
+        val flow: Flow[T, LogMessage, org.apache.pekko.NotUsed] = Counters.countWithin(config).map(count => LogMessage(message(count)))
       }
     }
 }

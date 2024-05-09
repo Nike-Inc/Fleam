@@ -1,8 +1,8 @@
 package com.nike.fleam
 package ops
 
-import akka.stream._
-import akka.stream.scaladsl._
+import org.apache.pekko.stream._
+import org.apache.pekko.stream.scaladsl._
 import scala.concurrent.Future
 import scala.collection.immutable.Iterable
 import scala.language.implicitConversions
@@ -23,20 +23,20 @@ object FutureFunctionHelperOps extends FutureFunctionHelperOps
 
 class FutureFunction1Helper[-T, +U](val f: Function1[T, Future[U]]) extends AnyVal {
   /** lifts a function from T => Future[U] into an ordered Flow */
-  def toFlow(parallelism: Int): Flow[T, U, akka.NotUsed] =
+  def toFlow(parallelism: Int): Flow[T, U, org.apache.pekko.NotUsed] =
     Flow[T]
       .mapAsync(parallelism)(f)
 
   /** lifts a function from T => Future[U] into an unordered Flow */
-  def toFlowUnordered(parallelism: Int): Flow[T, U, akka.NotUsed] =
+  def toFlowUnordered(parallelism: Int): Flow[T, U, org.apache.pekko.NotUsed] =
     Flow[T]
       .mapAsyncUnordered(parallelism)(f)
 
-  def toSource(parallelism: Int)(in: Iterable[T]): Source[U, akka.NotUsed] =
+  def toSource(parallelism: Int)(in: Iterable[T]): Source[U, org.apache.pekko.NotUsed] =
     Source(in)
       .mapAsync(parallelism)(f)
 
-  def toSourceUnordered(parallelism: Int)(in: Iterable[T]): Source[U, akka.NotUsed] =
+  def toSourceUnordered(parallelism: Int)(in: Iterable[T]): Source[U, org.apache.pekko.NotUsed] =
     Source(in)
       .mapAsyncUnordered(parallelism)(f)
 

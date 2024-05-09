@@ -60,7 +60,7 @@ val source = SqsSource(sqsClient).forQueue(sqsConfig)
 Now that we have our source we can start to create our pipeline. Let's imagine our pipeline is just going to log the
 message Id for now. Our source will feed us a stream of Amazon SQS Messages.
 ```scala
-import akka.stream.scaladsl._
+import org.apache.pekko.stream.scaladsl._
 import software.amazon.awssdk.services.sqs.model.Message
 
 val pipeline1 =
@@ -159,8 +159,8 @@ val pipeline3 = {
     .via(sqsDelete)
 }
 // error: type mismatch;
-//  found   : akka.stream.scaladsl.Flow[software.amazon.awssdk.services.sqs.model.Message,com.nike.fleam.sqs.BatchResult[software.amazon.awssdk.services.sqs.model.Message],akka.NotUsed]
-//  required: akka.stream.Graph[akka.stream.FlowShape[scala.util.Either[repl.Session.App.Irrelevant,software.amazon.awssdk.services.sqs.model.Message],?],?]
+//  found   : org.apache.pekko.stream.scaladsl.Flow[software.amazon.awssdk.services.sqs.model.Message,com.nike.fleam.sqs.BatchResult[software.amazon.awssdk.services.sqs.model.Message],org.apache.pekko.NotUsed]
+//  required: org.apache.pekko.stream.Graph[org.apache.pekko.stream.FlowShape[scala.util.Either[repl.MdocSession.MdocApp.Irrelevant,software.amazon.awssdk.services.sqs.model.Message],?],?]
 //     .via(sqsDelete)
 //          ^^^^^^^^^
 ```
@@ -198,14 +198,14 @@ That's it. Now our pipeline will only log messages less than 5 minutes old and d
 ## SqsStreamDaemon
 
 SqsStreamDaemon builds up the SQS client and takes care of sourcing and deleting messages. We just need our `sqsConfig:
-SqsQueueProcessingConfiguration` we created earlier, a name, and a pipeline of `Flow[Message, Message, akka.NotUsed]`.
+SqsQueueProcessingConfiguration` we created earlier, a name, and a pipeline of `Flow[Message, Message, org.apache.pekko.NotUsed]`.
 We can reuse the pipeline defined in the previous example minus the `sqsDelete` portion since the `SqsStreamDaemon` will
 take care of that.
 
 ```scala
 import com.nike.fleam.sqs.SqsStreamDaemon
 
-val pipeline5: Flow[Message, Message, akka.NotUsed] = {
+val pipeline5: Flow[Message, Message, org.apache.pekko.NotUsed] = {
   Flow[Message]
     .map { message =>
       (message, getTime(message))

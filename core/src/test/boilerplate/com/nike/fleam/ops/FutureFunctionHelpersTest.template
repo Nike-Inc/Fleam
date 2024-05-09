@@ -6,7 +6,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.concurrent.ScalaFutures
 import scala.concurrent.Future
-import akka.stream.scaladsl._
+import org.apache.pekko.stream.scaladsl._
 import scala.concurrent.duration._
 import com.nike.fleam.implicits._
 
@@ -61,7 +61,7 @@ class FutureFunctionHelpersTest extends AnyFlatSpec with Matchers with ScalaFutu
 
     def f([#i1: Int1#]) = Future([#i1# + ])
 
-    val source: Source[Int, akka.NotUsed] = (f _).toSource(parallelism)(inputs)
+    val source: Source[Int, org.apache.pekko.NotUsed] = (f _).toSource(parallelism)(inputs)
 
     val graph = source.runWith(Sink.head)
 
@@ -78,7 +78,7 @@ class FutureFunctionHelpersTest extends AnyFlatSpec with Matchers with ScalaFutu
 
     def f([#i1: Int1#]) = Future([#i1# + ])
 
-    val source: Source[Int, akka.NotUsed] = (f _).toSourceUnordered(parallelism)(inputs)
+    val source: Source[Int, org.apache.pekko.NotUsed] = (f _).toSourceUnordered(parallelism)(inputs)
 
     val graph = source.runWith(Sink.head)
 

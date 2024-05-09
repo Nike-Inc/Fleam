@@ -2,7 +2,7 @@ package com.nike.fleam.cloudwatch
 
 import com.nike.fleam.configuration._
 import com.nike.fleam.logging.{Counter, Counters}
-import akka.stream.scaladsl._
+import org.apache.pekko.stream.scaladsl._
 
 import scala.concurrent.Promise
 import org.scalatest.flatspec.AnyFlatSpec

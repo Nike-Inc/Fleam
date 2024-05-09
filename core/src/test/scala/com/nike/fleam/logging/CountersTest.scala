@@ -2,7 +2,7 @@ package com.nike.fleam
 package logging
 
 import configuration._
-import akka.stream.scaladsl._
+import org.apache.pekko.stream.scaladsl._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}

@@ -1,6 +1,6 @@
 ## Using a valve
 
-A valve is used to slow stream processing when an external system is having trouble. Unlike an akka circuit breaker
+A valve is used to slow stream processing when an external system is having trouble. Unlike a Pekko circuit breaker
 that fails quickly and moves onto the next item, a valve holds the failed item and retries a number of times. If the
 item fails to process after a number of attempts it moves onto the next item. This keeps our pipeline from becoming
 a fast-track to failure and instead slows processing while failure conditions exist.
@@ -9,13 +9,13 @@ Using a valve is fairly simple. A valve uses a CircuitBreaker to handle failure 
 trying downstream systems.
 
 ```scala mdoc:invisible
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 
 implicit val actorSystem: ActorSystem = ActorSystem("tut")
 ```
 First we'll need a CircuitBreaker.
 ```scala mdoc:silent
-import akka.pattern.CircuitBreaker
+import org.apache.pekko.pattern.CircuitBreaker
 import concurrent.duration._
 
 val circuitBreaker = CircuitBreaker(
@@ -60,7 +60,7 @@ val fetch1 = valve { number: Int =>
 }
 ```
 
-One thing to keep in mind is that with Akka Streams if you're dropping values that throw exceptions you're going to
+One thing to keep in mind is that with Pekko Streams if you're dropping values that throw exceptions you're going to
 lose elements if they continue to fail. If you're using values like eithers to represent your errors you'll want to
 recover from those exceptions after they've triggered the circuit breaker and exceeded the max retries. You can do
 this by providing a partial function from Throwable to your result type.

@@ -2,7 +2,7 @@ package com.nike.fleam
 package sqs
 
 import software.amazon.awssdk.services.sqs.model.Message
-import akka.stream.scaladsl.{Flow, Source, Sink}
+import org.apache.pekko.stream.scaladsl.{Flow, Source, Sink}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.concurrent.ScalaFutures

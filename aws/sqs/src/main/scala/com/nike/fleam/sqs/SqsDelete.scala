@@ -5,7 +5,7 @@ import com.nike.fleam.configuration._
 import sqs.configuration._
 import software.amazon.awssdk.services.sqs.model._
 import software.amazon.awssdk.services.sqs.SqsAsyncClient
-import akka.stream.scaladsl._
+import org.apache.pekko.stream.scaladsl._
 import ContainsMessage.ops._
 import com.nike.fawcett.sqs._
 
@@ -113,7 +113,7 @@ class SqsDelete(
      *  @return Flow from T to BatchResult containing AWS DeleteMessageBatchResponse and results divided into successful and failed.
      */
     def toFlow[T: ContainsMessage](config: SqsProcessingConfiguration)(implicit ec: ExecutionContext):
-        Flow[T, BatchResult[T], akka.NotUsed] =
+        Flow[T, BatchResult[T], org.apache.pekko.NotUsed] =
       Flow[T]
         .via(config.groupedWithin.toFlow)
         .map(_.toList)

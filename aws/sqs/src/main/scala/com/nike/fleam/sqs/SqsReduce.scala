@@ -1,7 +1,7 @@
 package com.nike.fleam
 package sqs
 
-import akka.stream.scaladsl.{Flow, Source}
+import org.apache.pekko.stream.scaladsl.{Flow, Source}
 import sqs.configuration._
 import com.nike.fleam.configuration._
 import cats.{Order, Semigroup}
@@ -68,7 +68,7 @@ class SqsReduce(
    *  @return Flow from Item to either SqsReduceError or Items that had no duplicates
    */
   def flow[Item : Semigroup : ContainsMessage : ToMessage : Keyed[*, Either[MessageError, GroupingKey]], GroupingKey : Order]:
-      Flow[Item, Either[SqsReduceError[Item], Item], akka.NotUsed] = {
+      Flow[Item, Either[SqsReduceError[Item], Item], org.apache.pekko.NotUsed] = {
     config.grouping.toFlow[Item]
       .flatMapConcat { batch =>
 

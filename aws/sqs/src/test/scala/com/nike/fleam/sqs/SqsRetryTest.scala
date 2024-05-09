@@ -3,7 +3,7 @@ package sqs
 
 import java.time.Instant
 
-import akka.stream.scaladsl._
+import org.apache.pekko.stream.scaladsl._
 import software.amazon.awssdk.services.sqs.model._
 import configuration._
 import org.scalatest.concurrent.ScalaFutures

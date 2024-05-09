@@ -29,7 +29,7 @@ need to be aware of the tuple and the flow only needs minimal boiler-plate for j
 
 
 ```scala
-import akka.stream.scaladsl._
+import org.apache.pekko.stream.scaladsl._
 import com.nike.fleam.implicits._
 import concurrent.Future
 

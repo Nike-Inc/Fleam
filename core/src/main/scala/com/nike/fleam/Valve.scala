@@ -1,7 +1,7 @@
 package com.nike.fleam
 
-import akka.actor.ActorSystem
-import akka.pattern.{ CircuitBreaker, after }
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.pattern.{ CircuitBreaker, after }
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.Future
 import scala.concurrent.duration._

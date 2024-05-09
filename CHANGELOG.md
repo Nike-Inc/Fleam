@@ -1,6 +1,13 @@
 Fleam release notes
 -------------------
 
+## Fleam 8.0.0
+
+* Switch from Akka to Pekko
+  * See [Pekko migration guide](https://pekko.apache.org/docs/pekko/current/project/migration-guides.html)
+* Updates dependency versions
+* Drops Java 8 support
+
 ## Fleam 7.1.0
 
 * Updates dependency versions

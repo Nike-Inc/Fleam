@@ -4,7 +4,7 @@ package ops
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
-import akka.stream.scaladsl._
+import org.apache.pekko.stream.scaladsl._
 import implicits._
 
 /** Copyright 2020-present, Nike, Inc.

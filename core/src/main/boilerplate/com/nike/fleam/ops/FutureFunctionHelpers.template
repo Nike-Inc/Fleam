@@ -1,8 +1,8 @@
 package com.nike.fleam
 package ops
 
-import akka.stream.Materializer
-import akka.stream.scaladsl._
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl._
 import scala.concurrent.Future
 import scala.collection.immutable.Iterable
 import scala.language.implicitConversions
@@ -25,20 +25,20 @@ trait FutureFunctionHelperOps2to22 {
 [2..22#
 class FutureFunction1Helper[[#-T1#], +U](val f: Function1[[#T1#], Future[U]]) {
   /** lifts a function from ([#T1#]) => Future[U] into an ordered Flow */
-  def toFlow(parallelism: Int): Flow[([#T1#]), U, akka.NotUsed] =
+  def toFlow(parallelism: Int): Flow[([#T1#]), U, org.apache.pekko.NotUsed] =
     Flow[([#T1#])]
       .mapAsync(parallelism)(f.tupled)
 
   /** lifts a function from ([#T1#]) => Future[U] into an unordered Flow */
-  def toFlowUnordered(parallelism: Int): Flow[([#T1#]), U, akka.NotUsed] =
+  def toFlowUnordered(parallelism: Int): Flow[([#T1#]), U, org.apache.pekko.NotUsed] =
     Flow[([#T1#])]
       .mapAsyncUnordered(parallelism)(f.tupled)
 
-  def toSource(parallelism: Int)(in: Iterable[([#T1#])]): Source[U, akka.NotUsed] =
+  def toSource(parallelism: Int)(in: Iterable[([#T1#])]): Source[U, org.apache.pekko.NotUsed] =
     Source(in)
       .mapAsync(parallelism)(f.tupled)
 
-  def toSourceUnordered(parallelism: Int)(in: Iterable[([#T1#])]): Source[U, akka.NotUsed] =
+  def toSourceUnordered(parallelism: Int)(in: Iterable[([#T1#])]): Source[U, org.apache.pekko.NotUsed] =
     Source(in)
       .mapAsyncUnordered(parallelism)(f.tupled)
 

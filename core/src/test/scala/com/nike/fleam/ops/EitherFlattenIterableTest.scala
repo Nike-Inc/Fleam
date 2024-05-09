@@ -1,7 +1,7 @@
 package com.nike.fleam
 package ops
 
-import akka.stream.scaladsl._
+import org.apache.pekko.stream.scaladsl._
 import cats.implicits._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers

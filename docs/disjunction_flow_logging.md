@@ -52,7 +52,7 @@ ignore something completely if we wanted. Now we just need to use it. Let's put 
 function here that returns a `Either[LunchOrderError, LunchOrder]` just to give the flow a bit of context.
 
 ```scala
-import akka.stream.scaladsl._
+import org.apache.pekko.stream.scaladsl._
 import cats.implicits._
 
 val lunchErrorLogger = new LunchOrderErrorLogger(info = println, error = println)

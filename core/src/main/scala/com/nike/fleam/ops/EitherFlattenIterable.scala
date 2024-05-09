@@ -2,8 +2,8 @@ package com.nike.fleam
 package ops
 
 import cats.implicits._
-import akka.stream._
-import akka.stream.scaladsl._
+import org.apache.pekko.stream._
+import org.apache.pekko.stream.scaladsl._
 import scala.collection.immutable.Iterable
 import scala.language.implicitConversions
 

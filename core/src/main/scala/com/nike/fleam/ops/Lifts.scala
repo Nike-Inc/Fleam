@@ -1,6 +1,6 @@
 package com.nike.fleam.ops
 
-import akka.stream.scaladsl._
+import org.apache.pekko.stream.scaladsl._
 import cats._
 import cats.implicits._
 import scala.concurrent.{ExecutionContext, Future}
@@ -15,12 +15,12 @@ import stream._
 
 trait LiftsOps {
   /** Lifts a function from `T => U` into a flow that that takes an `M[T]` and only processes if the value of `M[U]` */
-  def mFlow[M[_], T, U](f: T => U)(implicit monad: Monad[M]): Flow[M[T], M[U], akka.NotUsed] = {
+  def mFlow[M[_], T, U](f: T => U)(implicit monad: Monad[M]): Flow[M[T], M[U], org.apache.pekko.NotUsed] = {
     Flow[M[T]].mMap(f)
   }
 
   /** Lifts a function from `R => R1` into a flow that that takes an `Either[L, R]` and only processes if the value of `Either` is `R` */
-  def eitherFlow[L, R, R1](f: R => R1): Flow[Either[L, R], Either[L, R1], akka.NotUsed] =
+  def eitherFlow[L, R, R1](f: R => R1): Flow[Either[L, R], Either[L, R1], org.apache.pekko.NotUsed] =
     mFlow[Either[L, *], R, R1](f)
 
   /** Lifts a function from `T => Future[U]` into a flow that runs async from `M[T]` to `M[U]` */
@@ -40,7 +40,7 @@ trait LiftsOps {
   def mFlowAsyncUnordered[M[_], T, U]
       (parallelism: Int)
       (f: T => Future[U])(implicit trav: Traverse[M], ec: ExecutionContext)
-      : Flow[M[T], M[U], akka.NotUsed] =
+      : Flow[M[T], M[U], org.apache.pekko.NotUsed] =
     Flow[M[T]]
       .mMapAsyncUnordered(parallelism)(f)
 
