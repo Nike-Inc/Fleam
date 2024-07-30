@@ -1,6 +1,11 @@
 Fleam release notes
 -------------------
 
+## Fleam 8.1.0
+
+* Adds a version of `start` on `SimplifiedStreamDeamon` that takes in a `Supervision.Decider` and applies it to the graph so that it covers Source, Flow, and Sink
+* Updates dependency versions
+
 ## Fleam 8.0.0
 
 * Switch from Akka to Pekko

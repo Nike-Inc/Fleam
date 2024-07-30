@@ -1,7 +1,7 @@
 package com.nike.fleam
 package sqs
 
-import org.apache.pekko.stream.{Materializer, FlowShape, Graph, UniqueKillSwitch}
+import org.apache.pekko.stream.{Materializer, FlowShape, Graph, Supervision, UniqueKillSwitch}
 import org.apache.pekko.stream.scaladsl._
 import configuration.SqsQueueProcessingConfiguration
 import software.amazon.awssdk.regions.Region
@@ -59,6 +59,10 @@ object SqsStreamDaemon {
 
     def start(implicit materializer: Materializer) =
       daemon.start[Message, Message, UniqueKillSwitch, Mat, org.apache.pekko.Done](source, pipeline, sink)
+
+    def start(supervisionStrategy: Supervision.Decider)(implicit materializer: Materializer) =
+      daemon.start[Message, Message, UniqueKillSwitch, Mat, org.apache.pekko.Done](source, pipeline, sink, supervisionStrategy)
+
 
     def stop(): Future[Unit] = daemon.stop()
   }

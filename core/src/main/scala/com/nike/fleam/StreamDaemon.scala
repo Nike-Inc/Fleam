@@ -41,6 +41,23 @@ class StreamDaemon(name: String)(implicit ec: ExecutionContext) {
     out
   }
 
+  def start[SourceOut, FlowOut, SourceMat, PipelineMat, SinkOut](
+      source: Graph[SourceShape[SourceOut], SourceMat],
+      pipeline: Graph[FlowShape[SourceOut, FlowOut], PipelineMat],
+      sink: Graph[SinkShape[FlowOut], Future[SinkOut]],
+      supervisionStrategy: Supervision.Decider
+    )(implicit materializer: Materializer): Future[SinkOut] = {
+
+    logger.info(s"starting $name stream...")
+    val graph: RunnableGraph[(((SourceMat, UniqueKillSwitch), PipelineMat), Future[SinkOut])] = addKillSwitch(source)
+      .viaMat(pipeline)(Keep.both)
+      .toMat(sink)(Keep.both)
+      .withAttributes(ActorAttributes.supervisionStrategy(supervisionStrategy))
+    val (((sourceMat, ks), pipelineMat), out) = graph.run()
+    killSwitchPromise.success(List[Any](sourceMat, ks, pipelineMat).collect { case killSwitch: KillSwitch => killSwitch })
+    out
+  }
+
   def stop(): Future[Unit] = {
     logger.info(s"stopping $name stream...")
     killSwitches.map(_.map(_.shutdown()))
