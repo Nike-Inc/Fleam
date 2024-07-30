@@ -1,21 +1,22 @@
 import ReleaseTransformations._
+import com.here.bom.Bom
 
 val currentScalaVersion = "2.13.14"
 val scalaVersions = Seq("2.12.17", currentScalaVersion)
-val awsVersion = "2.25.46"
-val pekkoVersion = "1.0.2"
-val catsCore = "org.typelevel" %% "cats-core" % "2.10.0"
+val awsVersion = "2.26.26"
+val pekkoVersion = "1.0.3"
+val catsCore = "org.typelevel" %% "cats-core" % "2.12.0"
+
+lazy val aws2Bom = Bom("software.amazon.awssdk" % "bom" % awsVersion)
+lazy val pekkoBom = Bom("org.apache.pekko" %% "pekko-bom" % pekkoVersion)
 
 val checkEvictionsTask = taskKey[Unit]("Task that fails build if there are evictions")
 
 lazy val depOverrides = Seq(
   "org.slf4j" % "slf4j-api" % "1.7.36",
-  "org.slf4j" % "jcl-over-slf4j" % "1.7.36",
-  "io.netty" % "netty-codec-http" % "4.1.108.Final",
-  "io.netty" % "netty-handler" % "4.1.108.Final",
-  "commons-codec" % "commons-codec" % "1.15",
+  "commons-codec" % "commons-codec" % "1.17.1",
   "com.typesafe" % "config" % "1.4.3",
-  "software.amazon.awssdk" % "sqs" % awsVersion,
+  "org.apache.httpcomponents" % "httpcore" % "4.4.16",
   catsCore
 )
 
@@ -23,6 +24,8 @@ lazy val commonSettings = Seq(
   addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.3" cross CrossVersion.full),
   scalaVersion := currentScalaVersion,
   crossScalaVersions := scalaVersions,
+  aws2Bom,
+  pekkoBom,
   scalacOptions ++= (CrossVersion.partialVersion(scalaVersion.value) match {
     case Some((2, minor)) if minor >= 13 => Seq("-Ymacro-annotations", "-language:higherKinds")
     case _ => Seq("-language:higherKinds")
@@ -40,11 +43,18 @@ lazy val commonSettings = Seq(
   }),
   libraryDependencies ++= Seq(
     "org.slf4j" % "slf4j-api" % "1.7.30",
-    "org.slf4j" % "jcl-over-slf4j" % "1.7.30" % Test,
+    "org.slf4j" % "jcl-over-slf4j" % "1.7.36" % Test,
     "ch.qos.logback" % "logback-classic" % "1.2.13" % Test,
     "com.vladsch.flexmark" % "flexmark-all" % "0.64.8" % Test,
-    "org.scalatest" %% "scalatest" % "3.2.18" % Test),
+    "org.scalatest" %% "scalatest" % "3.2.19" % Test),
+  dependencyOverrides ++= aws2Bom.key.value.bomDependencies,
+  dependencyOverrides ++= pekkoBom.key.value.bomDependencies,
   dependencyOverrides ++= depOverrides,
+  dependencyOverrides ++= Seq(
+    "org.scala-lang" % "scala-compiler" % scalaVersion.value,
+    "org.scala-lang" % "scala-library" % scalaVersion.value,
+    "org.scala-lang" % "scala-reflect" % scalaVersion.value,
+  ),
   Compile / console / scalacOptions ~=
     (_ filterNot Set("-Xfatal-warnings", "-Xlint", "-Ywarn-unused-import")),
   checkEvictionsTask := {
@@ -181,6 +191,7 @@ lazy val docs = (project in file("./mdoc"))
       "org.jsoup" % "jsoup" % "1.10.2",
       "org.slf4j" % "slf4j-api" % "1.8.0-beta4",
       "org.wildfly.common" % "wildfly-common" % "1.5.2.Final",
+      "com.lihaoyi" %% "fansi" % "0.5.0"
     ))
 
 lazy val fleam = (project in file("."))

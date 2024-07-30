@@ -55,7 +55,7 @@ class SqsSource(fetchMessages: SqsSource.Fetch, messageModifier: Message => Mess
       .queueUrl(url)
       .maxNumberOfMessages(batchSize)
       // This should use types once this is fixed, see https://github.com/aws/aws-sdk-java-v2/issues/1892
-      .attributeNamesWithStrings(attributeNames.toList :_*)
+      .messageSystemAttributeNamesWithStrings(attributeNames.toList :_*)
       .messageAttributeNames(messageAttributeNames.toList :_*)
       .waitTimeSeconds(waitTimeSeconds)
       .build()

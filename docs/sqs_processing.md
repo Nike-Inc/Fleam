@@ -218,5 +218,21 @@ val pipeline5: Flow[Message, Message, org.apache.pekko.NotUsed] = {
 val daemon = SqsStreamDaemon(name = "example stream", sqsConfig = sqsConfig, pipeline5)
 ```
 
-Now our `start` method is simplified since all of that was created for us. When we're ready to start we just call
-`deamon.start()`.
+When we're ready to start we provide a supervision policy and can log when the Stream completes:
+
+```scala
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.Supervision
+
+implicit val actorSystem: ActorSystem = ActorSystem()
+
+val decider: Supervision.Decider = {
+  case t => System.err.println("Exception seen in stream, continuing with processing.", t); Supervision.Resume
+}
+
+daemon.start(decider)
+  .onComplete {
+    case scala.util.Success(_) => println("Daemon completed successfully")
+    case scala.util.Failure(error) => println(s"Failure from daemon: $error")
+  }
+```

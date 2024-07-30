@@ -6,8 +6,13 @@ import org.apache.pekko.stream.scaladsl._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.concurrent.ScalaFutures
+
 import scala.concurrent.Promise
 import scala.concurrent.duration._
+import scala.concurrent.Future
+
+import java.util.concurrent.atomic.AtomicBoolean
+import org.apache.pekko.stream.Supervision
 
 /** Copyright 2020-present, Nike, Inc.
  * All rights reserved.
@@ -51,5 +56,42 @@ class StreamDaemonTest extends AnyFlatSpec with Matchers with ScalaFutures {
     daemon.stop().onComplete  { case _ =>  actorSystem.terminate() }
 
     whenReady(sum) { _ should not be(0) }
+  }
+
+  it should "apply a supervision property to source, pipeline, and sink" in {
+    val flowProccessed = Promise[String]()
+
+    val sourceFn: Int => Future[Int] = failOnce(identity)
+    val pipelineFn: Int => Future[String] = failOnce("*".repeat(_))
+    val sinkFn: String => Future[String] = failOnce(s => s"result=$s")
+
+    val daemon = new StreamDaemon("test")
+
+    val supervisor: Supervision.Decider = {
+      case t => System.err.println(t); Supervision.Resume
+    }
+
+    // Run several values to test failures at each stage
+    // 1 fails during source function, 2 fails during pipeline function, and 3 fails during sink function
+    // 4 is successful, converts to **** and then Sink fucntion turns into "result=****"
+    daemon.start(
+      source = Source(Seq(1, 2, 3, 4)).mapAsync(1)(sourceFn),
+      pipeline = Flow[Int].mapAsync(1)(pipelineFn),
+      sink = Sink.foreachAsync[String](1)(r => sinkFn(r).map(v => flowProccessed.success(v)).map(_ => ())),
+      supervisionStrategy = supervisor)
+
+    whenReady(flowProccessed.future) { _ shouldBe ("result=****") }
+  }
+
+  def failOnce[I, O](f: I => O): I => Future[O] = {
+    val failed = new AtomicBoolean(false)
+
+    (t) => {
+      if (failed.compareAndSet(false, true)) {
+        Future.failed(new Exception(s"Failed to provide $value"))
+      } else {
+        Future.successful(f(t))
+      }
+    }
   }
 }

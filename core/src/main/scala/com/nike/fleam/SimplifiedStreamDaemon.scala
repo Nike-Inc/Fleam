@@ -1,6 +1,6 @@
 package com.nike.fleam
 
-import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.{Materializer, Supervision}
 import scala.concurrent.Future
 
 /** Copyright 2020-present, Nike, Inc.
@@ -16,6 +16,7 @@ trait SimplifiedStreamDeamon[SinkOut] {
       override def run(): Unit = stop()
     }))
   def start(implicit materializer: Materializer): Future[SinkOut]
+  def start(supervisionStrategy: Supervision.Decider)(implicit materializer: Materializer): Future[SinkOut]
   def stop(): Future[Unit]
   registerShutdownHook()
 }

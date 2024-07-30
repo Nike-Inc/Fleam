@@ -43,7 +43,7 @@ class SqsSourceTest extends AnyFlatSpec with Matchers with ScalaFutures {
         .queueUrl(url)
         .maxNumberOfMessages(10)
         .messageAttributeNames("All")
-        .attributeNames(QueueAttributeName.ALL)
+        .messageSystemAttributeNames(MessageSystemAttributeName.ALL)
         .waitTimeSeconds(0)
         .build()
 
@@ -75,8 +75,7 @@ class SqsSourceTest extends AnyFlatSpec with Matchers with ScalaFutures {
       val expected = ReceiveMessageRequest.builder()
         .queueUrl(url)
         .maxNumberOfMessages(10)
-        //TODO: This should use types once this is fixed, see https://github.com/aws/aws-sdk-java-v2/issues/1117
-        .attributeNamesWithStrings("All")
+        .messageSystemAttributeNames(MessageSystemAttributeName.ALL)
         .messageAttributeNames("All")
         .waitTimeSeconds(0)
         .build()
