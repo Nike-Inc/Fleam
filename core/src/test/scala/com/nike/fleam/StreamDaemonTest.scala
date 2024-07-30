@@ -75,7 +75,7 @@ class StreamDaemonTest extends AnyFlatSpec with Matchers with ScalaFutures {
     // 1 fails during source function, 2 fails during pipeline function, and 3 fails during sink function
     // 4 is successful, converts to **** and then Sink fucntion turns into "result=****"
     daemon.start(
-      source = Source(Seq(1, 2, 3, 4)).mapAsync(1)(sourceFn),
+      source = Source(List(1, 2, 3, 4)).mapAsync(1)(sourceFn),
       pipeline = Flow[Int].mapAsync(1)(pipelineFn),
       sink = Sink.foreachAsync[String](1)(r => sinkFn(r).map(v => flowProccessed.success(v)).map(_ => ())),
       supervisionStrategy = supervisor)
