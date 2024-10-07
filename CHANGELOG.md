@@ -1,6 +1,12 @@
 Fleam release notes
 -------------------
 
+## Fleam 9.0.0
+
+* Updates to Pekko 1.1.1
+* Updates to SLF4J v2
+* Renames `flatten` on `Source[Either[L, Iterable[R]]]` to `eitherFlatten` because it conflicts with a new `flatten` from Pekko
+
 ## Fleam 8.1.0
 
 * Adds a version of `start` on `SimplifiedStreamDeamon` that takes in a `Supervision.Decider` and applies it to the graph so that it covers Source, Flow, and Sink

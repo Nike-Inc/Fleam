@@ -29,9 +29,8 @@ object EitherFlattenIterableOps extends EitherFlattenIterableOps
 
 class EitherFlattenIterable[S[_], L, R](val stream: S[Either[L, Iterable[R]]]) extends AnyVal {
   /** Converts a `Either[L, Iterable[R]]` into individual `Either[L, R]`. Will not continue for inifinite sized mutable iterables.  */
-  def flatten(implicit es: EitherStream[S, L, Iterable[R]]): S[Either[L, R]] = es.flatMapConcat(stream) {
+  def eitherFlatten(implicit es: EitherStream[S, L, Iterable[R]]): S[Either[L, R]] = es.flatMapConcat(stream) {
     case Left(l) => Source.single(l.asLeft[R])
-    case Right(rs: Iterable[R]) => Source(rs).map(Right(_))
     case Right(rs) => Source(rs).map(Right(_))
   }
 }

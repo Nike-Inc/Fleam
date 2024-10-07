@@ -22,7 +22,7 @@ class EitherFlattenIterableTest extends AnyFlatSpec with Matchers with ScalaFutu
   it should "flatten a source with an iterable right" in {
 
     val result = Source.single(List("asdf", "fdsa").asRight[Int])
-      .flatten
+      .eitherFlatten
       .runWith(Sink.seq)
 
     result.futureValue shouldBe List("asdf".asRight, "fdsa".asRight)
@@ -31,7 +31,7 @@ class EitherFlattenIterableTest extends AnyFlatSpec with Matchers with ScalaFutu
   it should "flatten a flow with an iterable right" in {
 
     val flow = Flow[Either[Int, List[String]]]
-      .flatten
+      .eitherFlatten
 
     val result = Source.single(List("asdf", "fdsa").asRight[Int])
       .via(flow)
