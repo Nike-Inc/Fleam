@@ -1,10 +1,10 @@
 import ReleaseTransformations._
 import com.here.bom.Bom
 
-val currentScalaVersion = "2.13.14"
+val currentScalaVersion = "2.13.15"
 val scalaVersions = Seq("2.12.17", currentScalaVersion)
-val awsVersion = "2.26.26"
-val pekkoVersion = "1.0.3"
+val awsVersion = "2.28.17"
+val pekkoVersion = "1.1.1"
 val catsCore = "org.typelevel" %% "cats-core" % "2.12.0"
 
 lazy val aws2Bom = Bom("software.amazon.awssdk" % "bom" % awsVersion)
@@ -13,7 +13,7 @@ lazy val pekkoBom = Bom("org.apache.pekko" %% "pekko-bom" % pekkoVersion)
 val checkEvictionsTask = taskKey[Unit]("Task that fails build if there are evictions")
 
 lazy val depOverrides = Seq(
-  "org.slf4j" % "slf4j-api" % "1.7.36",
+  "org.slf4j" % "slf4j-api" % "2.0.16",
   "commons-codec" % "commons-codec" % "1.17.1",
   "com.typesafe" % "config" % "1.4.3",
   "org.apache.httpcomponents" % "httpcore" % "4.4.16",
@@ -42,9 +42,9 @@ lazy val commonSettings = Seq(
     case _ => Nil
   }),
   libraryDependencies ++= Seq(
-    "org.slf4j" % "slf4j-api" % "1.7.30",
-    "org.slf4j" % "jcl-over-slf4j" % "1.7.36" % Test,
-    "ch.qos.logback" % "logback-classic" % "1.2.13" % Test,
+    "org.slf4j" % "slf4j-api" % "2.0.16",
+    "org.slf4j" % "jcl-over-slf4j" % "2.0.16" % Test,
+    "ch.qos.logback" % "logback-classic" % "1.5.8" % Test,
     "com.vladsch.flexmark" % "flexmark-all" % "0.64.8" % Test,
     "org.scalatest" %% "scalatest" % "3.2.19" % Test),
   dependencyOverrides ++= aws2Bom.key.value.bomDependencies,
